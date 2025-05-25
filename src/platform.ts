@@ -28,7 +28,6 @@ export async function getRequest({
         url.protocol = protocol + ':';
       }
     }
-    }
     
     if (host_header && request.headers.get(host_header)) {
       const host = request.headers.get(host_header);

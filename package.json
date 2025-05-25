@@ -30,8 +30,7 @@
   "dependencies": {
     "cookie": "^0.6.0",
     "devalue": "^5.1.1",
-    "set-cookie-parser": "^2.7.1",
-    "sirv": "^2.0.4"
+    "set-cookie-parser": "^2.7.1"
   },
   "devDependencies": {
     "@sveltejs/kit": "^2.21.1",

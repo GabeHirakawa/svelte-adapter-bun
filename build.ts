@@ -76,10 +76,14 @@ const distPkg = {
 
 await Bun.write("dist/package.json", JSON.stringify(distPkg, null, 2));
 
-// Copy src directory to files in dist
+// Copy src directory to files in dist (TypeScript files)
 if (existsSync("src")) {
   await Bun.$`cp -r src dist/files`;
   console.log("📁 Copied src directory to dist/files");
+  
+  // The TypeScript files will be compiled at runtime by the adapter
+  // when it processes them with the replace functionality
+  console.log("📝 TypeScript files copied - they will be compiled during adapter processing");
 }
 
 // Generate TypeScript declarations (skip for now due to type conflicts)

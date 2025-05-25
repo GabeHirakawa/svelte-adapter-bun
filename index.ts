@@ -65,6 +65,10 @@ export default function (opts: AdapterOptions = {}) {
       // Use Bun.file to read package.json
       const pkg = await Bun.file("package.json").json().catch(() => ({}));
 
+      // Copy and compile TypeScript files to JavaScript
+      builder.log.minor("Compiling TypeScript runtime files");
+      
+      // First copy the files directory
       builder.copy(files, out, {
         replace: {
           SERVER: "./server/index.js",
@@ -73,6 +77,14 @@ export default function (opts: AdapterOptions = {}) {
           dotENV_PREFIX: envPrefix,
           BUILD_OPTIONS: `{ development: ${development}, dynamic_origin: ${dynamic_origin}, xff_depth: ${xff_depth}, assets: ${assets} }`,
         },
+      });
+      
+      // Then compile TypeScript files to JavaScript
+      await compileTypeScriptFiles(out, {
+        SERVER: "./server/index.js",
+        MANIFEST: "./manifest.js", 
+        ENV_PREFIX: JSON.stringify(envPrefix),
+        BUILD_OPTIONS: `{ development: ${development}, dynamic_origin: ${dynamic_origin}, xff_depth: ${xff_depth}, assets: ${assets} }`,
       });
 
       let package_data = {
@@ -169,6 +181,73 @@ async function compress_file(file: string, format: "gz" | "br" = "gz") {
 
   // Use Bun.write to write the compressed file
   await Bun.write(`${file}.${format}`, compressed);
+}
+
+/**
+ * Compile TypeScript files to JavaScript with replacements
+ */
+async function compileTypeScriptFiles(out: string, replacements: Record<string, string>) {
+  const tsFiles = await glob("**/*.ts", {
+    cwd: out,
+    absolute: true,
+    filesOnly: true,
+  });
+
+  for (const tsFile of tsFiles) {
+    try {
+      // Skip types.ts file as it only contains type declarations
+      if (tsFile.endsWith('types.ts')) {
+        await Bun.$`rm ${tsFile}`;
+        continue;
+      }
+      
+      // Read TypeScript file
+      let content = await Bun.file(tsFile).text();
+      
+      // Apply replacements only in import statements and specific contexts
+      for (const [key, value] of Object.entries(replacements)) {
+        // Replace in import statements
+        content = content.replaceAll(`from '${key}'`, `from ${value}`);
+        content = content.replaceAll(`from "${key}"`, `from ${value}`);
+        // Replace standalone references
+        content = content.replaceAll(`'${key}'`, value);
+        content = content.replaceAll(`"${key}"`, value);
+      }
+      
+      // Write to a temporary file and compile it
+      const tempFile = tsFile.replace('.ts', '.temp.ts');
+      await Bun.write(tempFile, content);
+      
+      // Compile TypeScript to JavaScript using Bun's transpiler
+      const transpiled = await Bun.build({
+        entrypoints: [tempFile],
+        target: "node",
+        format: "esm",
+        minify: false,
+        external: ["fs", "path", "url", "cookie", "MANIFEST", "SERVER"],
+      });
+      
+      if (transpiled.success && transpiled.outputs.length > 0) {
+        const jsContent = await transpiled.outputs[0]!.text();
+        const jsFile = tsFile.replace('.ts', '.js');
+        
+        // Write JavaScript file
+        await Bun.write(jsFile, jsContent);
+        
+        // Remove TypeScript and temp files
+        await Bun.$`rm ${tsFile} ${tempFile}`;
+      } else {
+        console.error(`Failed to compile ${tsFile}`);
+        for (const message of transpiled.logs) {
+          console.error(message);
+        }
+        // Clean up temp file
+        await Bun.$`rm -f ${tempFile}`;
+      }
+    } catch (error) {
+      console.error(`Error compiling ${tsFile}:`, error);
+    }
+  }
 }
 
 /**

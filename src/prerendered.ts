@@ -2,15 +2,15 @@ import { prerendered } from 'MANIFEST';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { existsSync } from 'fs';
+import type { Handler } from './types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Create prerendered page handler
- * @returns {Function}
  */
-export function createPrerenderedHandler() {
-  return async function prerenderedHandler(request) {
+export function createPrerenderedHandler(): Handler {
+  return async function prerenderedHandler(request: Request): Promise<Response | null> {
     const url = new URL(request.url);
     
     // Only handle prerendered routes
@@ -18,7 +18,7 @@ export function createPrerenderedHandler() {
       return null; // Not a prerendered route
     }
     
-    let prerenderedPath;
+    let prerenderedPath: string;
     
     if (url.pathname === '/') {
       prerenderedPath = path.join(__dirname, 'prerendered', 'index.html');

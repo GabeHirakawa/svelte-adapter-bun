@@ -3,8 +3,8 @@ import { createStaticHandler } from './static.js';
 import { createPrerenderedHandler } from './prerendered.js';
 import { createSvelteKitHandler } from './sveltekit.js';
 
-const port = parseInt(env('PORT', '3000'));
-const host = env('HOST', '0.0.0.0');
+const port = parseInt(env('PORT', '3000') as string);
+const host = env('HOST', '0.0.0.0') as string;
 
 // Create handlers in order of priority
 const staticHandler = createStaticHandler();
@@ -13,10 +13,8 @@ const svelteKitHandler = createSvelteKitHandler();
 
 /**
  * Main request handler with proper middleware chain
- * @param {Request} request
- * @returns {Promise<Response>}
  */
-async function handler(request) {
+async function handler(request: Request): Promise<Response> {
   try {
     // 1. Try static assets first (highest priority)
     const staticResponse = await staticHandler(request);
@@ -47,7 +45,7 @@ const server = Bun.serve({
   port,
   hostname: host,
   fetch: handler,
-  error(error) {
+  error(error: Error): Response {
     console.error('Server error:', error);
     return new Response('Internal Server Error', { status: 500 });
   }
@@ -58,7 +56,7 @@ console.log(`Server running on http://${host}:${port}`);
 export { handler };
 
 // Graceful shutdown
-const shutdown = (signal) => {
+const shutdown = (signal: string): void => {
   console.log(`\nReceived ${signal}, shutting down gracefully...`);
   server.stop();
   process.exit(0);

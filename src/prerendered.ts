@@ -1,3 +1,4 @@
+// @ts-ignore - MANIFEST is replaced at build time
 import { prerendered } from 'MANIFEST';
 import { fileURLToPath } from 'url';
 import path from 'path';

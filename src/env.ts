@@ -21,7 +21,7 @@ export function env(name: string, defaultValue?: string | number): string | unde
  * Get environment variable as integer
  */
 export function envInt(name: string, defaultValue?: number): number {
-  const value = env(name, defaultValue);
+  const value = env(name, defaultValue?.toString());
   const parsed = parseInt(value as string, 10);
   
   if (isNaN(parsed)) {
@@ -35,10 +35,10 @@ export function envInt(name: string, defaultValue?: number): number {
  * Get environment variable as boolean
  */
 export function envBool(name: string, defaultValue?: boolean): boolean {
-  const value = env(name, defaultValue);
+  const value = env(name, defaultValue?.toString());
   
-  if (typeof value === 'boolean') {
-    return value;
+  if (value === undefined) {
+    return false;
   }
   
   const str = String(value).toLowerCase();

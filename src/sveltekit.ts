@@ -1,4 +1,6 @@
+// @ts-ignore - SERVER is replaced at build time
 import { Server } from 'SERVER';
+// @ts-ignore - MANIFEST is replaced at build time
 import { manifest } from 'MANIFEST';
 import { env } from './env.js';
 import { getRequest, setResponse } from './platform.js';
@@ -12,10 +14,10 @@ await server.init({ env: process.env });
 const buildOptions = BUILD_OPTIONS;
 const origin = env('ORIGIN', undefined);
 const xff_depth = parseInt(env('XFF_DEPTH', '1') as string);
-const address_header = env('ADDRESS_HEADER', '').toLowerCase();
-const protocol_header = env('PROTOCOL_HEADER', '').toLowerCase();
-const host_header = env('HOST_HEADER', 'host').toLowerCase();
-const port_header = env('PORT_HEADER', '').toLowerCase();
+const address_header = (env('ADDRESS_HEADER', '') ?? '').toLowerCase();
+const protocol_header = (env('PROTOCOL_HEADER', '') ?? '').toLowerCase();
+const host_header = (env('HOST_HEADER', 'host') ?? 'host').toLowerCase();
+const port_header = (env('PORT_HEADER', '') ?? '').toLowerCase();
 
 /**
  * Create SvelteKit handler for dynamic routes

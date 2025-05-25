@@ -5,8 +5,6 @@ import { existsSync } from "fs";
 // Read package.json to determine external dependencies
 const pkg = await Bun.file("package.json").json();
 const external = [
-  // Always external - Node.js built-ins
-  "fs", "path", "url", "util", "stream", "zlib", "crypto", "os", "events",
   // Production dependencies should be external (not bundled)
   ...Object.keys(pkg.dependencies || {}),
   // Peer dependencies should be external  
@@ -76,20 +74,16 @@ const distPkg = {
 
 await Bun.write("dist/package.json", JSON.stringify(distPkg, null, 2));
 
-// Copy src directory to files in dist (TypeScript files)
+// Copy src directory to files in dist
 if (existsSync("src")) {
   await Bun.$`cp -r src dist/files`;
   console.log("📁 Copied src directory to dist/files");
-  
-  // The TypeScript files will be compiled at runtime by the adapter
-  // when it processes them with the replace functionality
-  console.log("📝 TypeScript files copied - they will be compiled during adapter processing");
 }
 
 // Generate TypeScript declarations (skip for now due to type conflicts)
 console.log("📝 Skipping TypeScript declarations due to type conflicts...");
 // TODO: Fix type conflicts between bun-types and vite types
-// await Bun.$`bunx tsc --declaration --emitDeclarationOnly --outDir dist --module ESNext --target ESNext --moduleResolution bundler --esModuleInterop --allowSyntheticDefaultImports index.ts`;
+await Bun.$`bunx tsc`;
 
 console.log("🎉 Build complete! Output in ./dist");
 console.log("📊 Bundle analysis:");

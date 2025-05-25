@@ -45,7 +45,7 @@ export async function getRequest({
       if (address_header === 'x-forwarded-for') {
         // Handle X-Forwarded-For with depth
         const addresses = address.split(',').map(addr => addr.trim());
-        const clientAddress = addresses[Math.max(0, addresses.length - xff_depth)];
+        const clientAddress = addresses[Math.max(0, addresses.length - xff_depth)] || addresses[0] || '';
         headers.set('x-forwarded-for', clientAddress);
       } else {
         headers.set('x-forwarded-for', address);

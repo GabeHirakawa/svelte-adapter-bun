@@ -96,7 +96,7 @@ export default function (opts: AdapterOptions = {}) {
         scripts: {
           start: "bun ./index.js",
         },
-        dependencies: { cookie: "latest", devalue: "latest", "set-cookie-parser": "latest" },
+        dependencies: { },
       };
 
       try {
@@ -224,7 +224,7 @@ async function compileTypeScriptFiles(out: string, replacements: Record<string, 
         target: "node",
         format: "esm",
         minify: false,
-        external: ["fs", "path", "url", "cookie", "MANIFEST", "SERVER"],
+        external: ["MANIFEST", "SERVER"],
       });
       
       if (transpiled.success && transpiled.outputs.length > 0) {

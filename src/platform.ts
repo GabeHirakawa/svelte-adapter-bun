@@ -23,16 +23,28 @@ export async function getRequest({
   } else {
     // Use headers to determine origin
     if (protocol_header && request.headers.get(protocol_header)) {
-      url.protocol = request.headers.get(protocol_header) + ':';
+      const protocol = request.headers.get(protocol_header);
+      if (protocol && /^https?$/.test(protocol)) {
+        url.protocol = protocol + ':';
+      }
+    }
     }
     
     if (host_header && request.headers.get(host_header)) {
-      url.host = request.headers.get(host_header) as string;
+      const host = request.headers.get(host_header);
+      if (host && /^[a-zA-Z0-9.-]+(?::\d+)?$/.test(host)) {
+        url.host = host;
+      }
     }
     
     if (port_header && request.headers.get(port_header)) {
       const port = request.headers.get(port_header);
-      url.port = port as string;
+      if (port && /^\d+$/.test(port)) {
+        const portNum = parseInt(port, 10);
+        if (portNum >= 1 && portNum <= 65535) {
+          url.port = port;
+        }
+      }
     }
   }
   
@@ -71,7 +83,11 @@ export function setResponse(response: Response): Response {
   const headers = new Headers(response.headers);
   
   // Handle Set-Cookie headers properly
-  const setCookieHeaders = (response.headers as any).getSetCookie?.() || [];
+  // Handle Set-Cookie headers properly
+  const setCookieHeaders = 'getSetCookie' in response.headers && 
+    typeof response.headers.getSetCookie === 'function' 
+    ? response.headers.getSetCookie() 
+    : [];
   if (setCookieHeaders.length > 0) {
     // Remove existing set-cookie header
     headers.delete('set-cookie');

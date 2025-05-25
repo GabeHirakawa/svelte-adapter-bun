@@ -22,12 +22,17 @@ export function env(name: string, defaultValue?: string | number): string | unde
  */
 export function envInt(name: string, defaultValue?: number): number {
   const value = env(name, defaultValue?.toString());
-  const parsed = parseInt(value as string, 10);
-  
+
+  if (value === undefined) {
+    throw new Error(`Environment variable ${name} is required for integer parsing`);
+  }
+
+  const parsed = parseInt(value, 10);
+
   if (isNaN(parsed)) {
     throw new Error(`Environment variable ${name} must be a valid integer, got: ${value}`);
   }
-  
+
   return parsed;
 }
 

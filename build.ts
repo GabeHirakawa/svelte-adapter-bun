@@ -80,10 +80,13 @@ if (existsSync("src")) {
   console.log("📁 Copied src directory to dist/files");
 }
 
-// Generate TypeScript declarations (skip for now due to type conflicts)
-console.log("📝 Skipping TypeScript declarations due to type conflicts...");
-// TODO: Fix type conflicts between bun-types and vite types
-await Bun.$`bunx tsc`;
+// Generate TypeScript declarations
+try {
+  await Bun.$`bunx tsc --declaration --emitDeclarationOnly --outDir dist`;
+  console.log("📝 Generated TypeScript declarations");
+} catch (error) {
+  console.warn("⚠️  Failed to generate TypeScript declarations:", error);
+}
 
 console.log("🎉 Build complete! Output in ./dist");
 console.log("📊 Bundle analysis:");

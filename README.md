@@ -5,7 +5,7 @@ A high-performance SvelteKit adapter for [Bun](https://bun.sh/) runtime, built w
 ## ⚠️ Experimental Status
 
 **This adapter is currently experimental and under active development.** While it should work, I have not had an opportunity to fully test it across all environments
-[]
+**This adapter is currently experimental and under active development.** While it should work, I have not had an opportunity to fully test it across all environments.
 ### Recommendations
 - ✅ **Safe for**: Development, prototyping, and low-traffic applications
 - ⚠️ **Use with caution**: Production applications with critical uptime requirements

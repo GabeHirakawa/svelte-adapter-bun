@@ -47,7 +47,9 @@ export function createStaticHandler(): Handler {
       return null; // Not a static asset
     }
     
-    const assetPath = path.join(__dirname, 'client', url.pathname);
+    // Sanitize pathname to prevent path traversal
+    const safePath = path.posix.normalize(url.pathname).replace(/^\/+/, '');
+    const assetPath = path.join(__dirname, 'client', safePath);
     
     if (!existsSync(assetPath)) {
       // Return 404 for missing static assets instead of falling through

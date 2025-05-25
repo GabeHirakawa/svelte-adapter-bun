@@ -3,8 +3,8 @@ import { createStaticHandler } from './static.js';
 import { createPrerenderedHandler } from './prerendered.js';
 import { createSvelteKitHandler } from './sveltekit.js';
 
-const port = parseInt(env('PORT', '3000') as string);
-const host = env('HOST', '0.0.0.0') as string;
+const port = parseInt(env('PORT', '3000')!);
+const host = env('HOST', '0.0.0.0')!;
 
 // Create handlers in order of priority
 const staticHandler = createStaticHandler();

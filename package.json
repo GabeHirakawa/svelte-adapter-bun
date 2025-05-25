@@ -1,8 +1,10 @@
 {
-  "name": "svelte-adapter-bun",
-  "version": "1.0.0",
+  "name": "@gkh/svelte-adapter-bun",
+  "version": "1.0.2",
   "main": "dist/index.js",
   "module": "dist/index.js",
+  "author": "Gabriel Hirakawa",
+  "homepage": "https://github.com/gabehirakawa/svelte-adapter-bun",
   "devDependencies": {
     "@sveltejs/kit": "^2.21.1",
     "@types/bun": "latest",

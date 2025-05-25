@@ -23,5 +23,16 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
-  }
+  },
+  "include": [
+    "index.ts",
+    "build.ts",
+    "src/**/*",
+    "types.d.ts"
+  ],
+  "exclude": [
+    "test-app/**/*",
+    "node_modules",
+    "dist"
+  ]
 }

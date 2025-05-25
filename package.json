@@ -1,14 +1,50 @@
 {
   "name": "svelte-adapter-bun",
-  "module": "index.ts",
+  "version": "1.0.0",
+  "description": "SvelteKit adapter for Bun with optimized bundling using Bun's native bundler",
   "type": "module",
-  "private": true,
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "bun run build.ts",
+    "dev": "bun run index.ts",
+    "prepublishOnly": "bun run build"
+  },
+  "keywords": [
+    "svelte",
+    "sveltekit",
+    "adapter",
+    "bun",
+    "bundler",
+    "server"
+  ],
+  "dependencies": {
+    "cookie": "^0.6.0",
+    "devalue": "^5.1.1",
+    "set-cookie-parser": "^2.7.1",
+    "sirv": "^2.0.4"
+  },
   "devDependencies": {
     "@sveltejs/kit": "^2.21.1",
     "@types/bun": "latest",
-    "bun-types": "^1.2.14"
+    "bun-types": "^1.2.14",
+    "tiny-glob": "^0.2.9"
   },
   "peerDependencies": {
+    "@sveltejs/kit": "^2.0.0",
     "typescript": "^5"
-  }
+  },
+  "engines": {
+    "bun": ">=1.0.0"
+  },
+  "license": "MIT"
 }

@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { existsSync } from 'fs';
-import type { Handler, MimeTypeMap } from './types.js';
+import type { Handler, MimeTypeMap } from './types.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

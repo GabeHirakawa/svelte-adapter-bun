@@ -1,5 +1,21 @@
 import { parse, serialize } from 'cookie';
-import type { RequestOptions, CookieOptions } from './types.js';
+import type { RequestOptions, CookieOptions } from './types.ts';
+
+/**
+ * Feature detection for duplex property support in Request constructor
+ */
+function supportsDuplexProperty(): boolean {
+  try {
+    new Request('http://localhost', {
+      method: 'POST',
+      body: 'test',
+      duplex: 'half'
+    } as any);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
 
 /**
  * Convert Bun Request to SvelteKit Request
@@ -15,13 +31,11 @@ export async function getRequest({
 }: RequestOptions): Promise<Request> {
   const url = new URL(request.url);
   
-  // Handle origin and protocol/host headers
   if (origin) {
     const originUrl = new URL(origin);
     url.protocol = originUrl.protocol;
     url.host = originUrl.host;
   } else {
-    // Use headers to determine origin
     if (protocol_header && request.headers.get(protocol_header)) {
       const protocol = request.headers.get(protocol_header);
       if (protocol && /^https?$/.test(protocol)) {
@@ -47,14 +61,12 @@ export async function getRequest({
     }
   }
   
-  // Handle client IP address
   const headers = new Headers(request.headers);
   
   if (address_header) {
     const address = request.headers.get(address_header);
     if (address) {
       if (address_header === 'x-forwarded-for') {
-        // Handle X-Forwarded-For with depth
         const addresses = address.split(',').map(addr => addr.trim());
         const clientAddress = addresses[Math.max(0, addresses.length - xff_depth)] || addresses[0] || '';
         headers.set('x-forwarded-for', clientAddress);
@@ -64,33 +76,31 @@ export async function getRequest({
     }
   }
   
-  // Create new request with corrected URL
-  return new Request(url.toString(), {
+  const requestInit: RequestInit = {
     method: request.method,
     headers,
     body: request.body,
-    duplex: 'half'
-  } as RequestInit);
+  };
+
+  if (supportsDuplexProperty()) {
+    (requestInit as any).duplex = 'half';
+  }
+
+  return new Request(url.toString(), requestInit);
 }
 
 /**
  * Convert SvelteKit Response to Bun Response
  */
 export function setResponse(response: Response): Response {
-  // Bun's Response is already compatible with Web API Response
-  // Just ensure headers are properly set
   const headers = new Headers(response.headers);
   
-  // Handle Set-Cookie headers properly
-  // Handle Set-Cookie headers properly
   const setCookieHeaders = 'getSetCookie' in response.headers && 
     typeof response.headers.getSetCookie === 'function' 
     ? response.headers.getSetCookie() 
     : [];
   if (setCookieHeaders.length > 0) {
-    // Remove existing set-cookie header
     headers.delete('set-cookie');
-    // Add each set-cookie header individually
     setCookieHeaders.forEach((cookie: string) => {
       headers.append('set-cookie', cookie);
     });

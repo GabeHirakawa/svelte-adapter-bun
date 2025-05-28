@@ -1,34 +1,21 @@
 # svelte-adapter-bun
 
-A high-performance SvelteKit adapter for [Bun](https://bun.sh/) runtime, built with TypeScript and leveraging Bun's native APIs for optimal performance.
-
-## ⚠️ Experimental Status
-
-**This adapter is currently experimental and under active development.** While it should work, I have not had an opportunity to fully test it across all environments
-**This adapter is currently experimental and under active development.** While it should work, I have not had an opportunity to fully test it across all environments.
-### Recommendations
-- ✅ **Safe for**: Development, prototyping, and low-traffic applications
-- ⚠️ **Use with caution**: Production applications with critical uptime requirements
-- 🔄 **Stay updated**: Monitor releases for important updates and breaking changes
-
-### Feedback Welcome
-Feel free to try the adapter and [report any issues](https://github.com/gabehirakawa/svelte-adapter-bun/issues) you encounter.
+A high-performance SvelteKit adapter that leverages Bun's native APIs for optimal speed and efficiency.
 
 ## Features
 
-- 🚀 **Native Bun APIs**: Uses `Bun.serve()`, `Bun.file()`, `Bun.write()`, and `Bun.gzipSync()` for maximum performance
+- 🚀 **Native Bun Runtime**: Utilizes Bun's built-in APIs for maximum performance
 - 📦 **Smart Bundling**: Bundles dev dependencies while keeping production dependencies external (same strategy as `@sveltejs/adapter-node`)
-- 🔧 **TypeScript First**: Written entirely in TypeScript with comprehensive type safety
-- 🏗️ **Modular Architecture**: Clean separation of concerns with dedicated handlers for static assets, prerendered pages, and dynamic routes
-- ⚡ **Zero Race Conditions**: Deterministic request handling order eliminates asset serving issues
-- 🗜️ **Asset Compression**: Built-in Gzip and Brotli compression support
-- 🌐 **WebSocket Support**: Includes WebSocket handler patching for real-time applications
+- 🔄 **Built-in Compression**: Supports Brotli and Gzip compression for static assets
+- 📁 **Static Asset Handling**: Efficient serving of static files with proper caching headers
+- 🌐 **Native WebSocket Support**: Built-in WebSocket handler using Bun's native WebSocket API
+- 🔧 **Zero Config**: Works out of the box with sensible defaults
+- 🎯 **Production Ready**: Generates minimal, optimized builds for deployment
+
 ## Installation
 
 ```bash
-npm install svelte-adapter-bun
-# or
-bun add svelte-adapter-bun
+bun add -D svelte-adapter-bun
 ```
 
 ## Usage
@@ -41,184 +28,173 @@ import adapter from 'svelte-adapter-bun';
 export default {
   kit: {
     adapter: adapter({
-      // options
+      // Options
     })
   }
 };
 ```
 
-## Configuration Options
+## Options
 
-```typescript
-interface AdapterOptions {
-  out?: string;                    // Output directory (default: 'build')
-  precompress?: boolean | {        // Asset compression (default: false)
-    files?: string[];              // File extensions to compress
-    brotli?: boolean;              // Enable Brotli compression
-    gzip?: boolean;                // Enable Gzip compression
-  };
-  envPrefix?: string;              // Environment variable prefix (default: '')
-  development?: boolean;           // Development mode (default: false)
-  dynamic_origin?: boolean;        // Allow dynamic origin detection (default: false)
-  xff_depth?: number;              // X-Forwarded-For depth (default: 1)
-  assets?: boolean;                // Include static assets (default: true)
-}
-```
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `out` | `string` | `'build'` | The directory to write the built files to |
+| `precompress` | `boolean \| CompressOptions` | `false` | Enable precompression of assets |
+| `envPrefix` | `string` | `''` | Prefix for environment variables |
+| `development` | `boolean` | `false` | Enable development mode (disables minification) |
+| `dynamic_origin` | `boolean` | `false` | Enable dynamic origin support |
+| `xff_depth` | `number` | `1` | X-Forwarded-For depth for trusted proxies |
+| `assets` | `boolean` | `true` | Serve static assets |
 
-### Example Configuration
-
-```js
-import adapter from 'svelte-adapter-bun';
-
-export default {
-  kit: {
-    adapter: adapter({
-      out: 'dist',
-      precompress: {
-        gzip: true,
-        brotli: true,
-        files: ['html', 'js', 'css', 'json', 'svg']
-      },
-      envPrefix: 'MY_APP_',
-      development: false
-    })
-  }
-};
-```
-
-## Building Your App
-
-```bash
-# Build with Bun (recommended)
-bun --bun run build
-
-# Or with npm/pnpm
-npm run build
-```
-
-**Important**: Use `bun --bun run build` instead of `bun run build` to ensure Bun's native APIs are available during the build process.
-
-## Running Your App
-
-```bash
-# Start the production server
-bun ./build/index.js
-
-# Or with custom port
-PORT=8080 bun ./build/index.js
-```
-
-## Environment Variables
-
-The adapter supports the following environment variables:
-
-- `PORT` - Server port (default: 3000)
-- `HOST` - Server hostname (default: 0.0.0.0)
-- `ORIGIN` - Origin URL for request handling
-- `XFF_DEPTH` - X-Forwarded-For header depth (default: 1)
-- `ADDRESS_HEADER` - Custom address header name
-- `PROTOCOL_HEADER` - Custom protocol header name
-- `HOST_HEADER` - Custom host header name (default: host)
-- `PORT_HEADER` - Custom port header name
-
-### Environment Variable Prefixes
-
-You can use the `envPrefix` option to namespace your environment variables:
+### Compression Options
 
 ```js
 adapter({
-  envPrefix: 'MYAPP_'
+  precompress: {
+    brotli: true,    // Enable Brotli compression
+    gzip: true,      // Enable Gzip compression
+    files: ['html', 'js', 'css', 'svg', 'xml'] // File extensions to compress
+  }
 })
 ```
 
-This allows you to use variables like `MYAPP_PORT`, `MYAPP_HOST`, etc.
+## WebSocket Support
 
-## Architecture
+This adapter includes native WebSocket support using Bun's WebSocket API. To use WebSockets in your SvelteKit app:
 
-The adapter uses a modular architecture with three main handlers:
+1. Create a `src/hooks.server.ts` file:
 
-1. **Static Handler** (`src/static.ts`) - Serves static assets with proper caching headers
-2. **Prerendered Handler** (`src/prerendered.ts`) - Serves prerendered pages
-3. **SvelteKit Handler** (`src/sveltekit.ts`) - Handles dynamic routes through SvelteKit
+```ts
+import type { Handle } from '@sveltejs/kit';
 
-Request flow:
-```
-Request → Static Assets → Prerendered Pages → SvelteKit → Response
-```
+export const handle: Handle = async ({ event, resolve }) => {
+  return resolve(event);
+};
 
-## Performance Features
-
-### Native Bun APIs
-- `Bun.serve()` for HTTP server
-- `Bun.file()` for file operations
-- `Bun.write()` for file writing
-- `Bun.gzipSync()` for compression
-
-### Smart Caching
-- Immutable assets: `max-age=31536000, immutable`
-- Regular assets: `max-age=3600`
-- Prerendered pages: `max-age=3600`
-
-### Bundling Strategy
-- **Bundled**: Development dependencies and internal modules
-- **External**: Production dependencies, Node.js built-ins, and SvelteKit modules
-
-## Development
-
-### Project Structure
-
-```
-svelte-adapter-bun/
-├── src/                 # TypeScript source files
-│   ├── types.ts        # Type definitions
-│   ├── env.ts          # Environment helpers
-│   ├── platform.ts     # Request/Response adapters
-│   ├── static.ts       # Static file handler
-│   ├── prerendered.ts  # Prerendered page handler
-│   ├── sveltekit.ts    # SvelteKit handler
-│   └── index.ts        # Main server entry
-├── test-app/           # Test SvelteKit application
-├── build.ts            # Build script
-├── index.ts            # Adapter entry point
-└── README.md
+// Export WebSocket handlers
+export const handleWebsocket = {
+  open(ws) {
+    console.log('WebSocket opened');
+    ws.send('Welcome!');
+  },
+  
+  message(ws, message) {
+    console.log('Received:', message);
+    ws.send(`Echo: ${message}`);
+  },
+  
+  close(ws, code, reason) {
+    console.log('WebSocket closed:', code, reason);
+  },
+  
+  // Optional: Control upgrade behavior
+  upgrade(request, server) {
+    const url = new URL(request.url);
+    if (url.pathname === '/ws') {
+      return true; // Upgrade to WebSocket
+    }
+    return false;
+  }
+};
 ```
 
-### Building the Adapter
+2. Connect from the client:
+
+```js
+const ws = new WebSocket('ws://localhost:3000/ws');
+ws.onmessage = (event) => console.log(event.data);
+ws.send('Hello, server!');
+```
+
+See `src/hooks.example.ts` for a complete WebSocket implementation example.
+
+## Environment Variables
+
+The adapter supports environment variables with optional prefixing:
+
+```js
+adapter({
+  envPrefix: 'PUBLIC_'
+})
+```
+
+This will make `PUBLIC_API_URL` available as `API_URL` in your app.
+
+## Building and Running
+
+After building your app:
 
 ```bash
-# Build the adapter
-bun run build.ts
+bun run build
+```
 
-# Test with the test app
-cd test-app
-bun --bun run build
+The adapter generates a minimal `package.json` in the build directory. To run the server:
+
+```bash
+cd build
+bun install --production
+bun ./index.js
+```
+
+Or simply:
+
+```bash
 bun ./build/index.js
 ```
 
-### TypeScript Compilation
+## Production Deployment
 
-The adapter automatically compiles TypeScript files to JavaScript during the build process:
+The build output is optimized for production:
 
-1. Copies TypeScript files to the output directory
-2. Applies build-time replacements (MANIFEST, SERVER, etc.)
-3. Compiles TypeScript to JavaScript using Bun's transpiler
-4. Removes TypeScript files, keeping only JavaScript
+- All dev dependencies are bundled into the server code
+- Only production dependencies need to be installed
+- Static assets are precompressed (if enabled)
+- Server code is minified (unless in development mode)
 
-## Contributing
+## Docker Example
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+```dockerfile
+FROM oven/bun:1-alpine
+
+WORKDIR /app
+
+# Copy build output
+COPY build build/
+COPY package.json .
+
+# Install only production dependencies
+RUN cd build && bun install --production
+
+EXPOSE 3000
+CMD ["bun", "./build/index.js"]
+```
+
+## Performance
+
+This adapter leverages Bun's native features for optimal performance:
+
+- Native file I/O operations using `Bun.file()`
+- Built-in compression with `Bun.gzipSync()`
+- Native HTTP server with `Bun.serve()`
+- Zero-overhead WebSocket support
+- Efficient bundling with `Bun.build()`
+
+## Differences from adapter-node
+
+While maintaining API compatibility with `@sveltejs/adapter-node`, this adapter:
+
+- Uses Bun's native APIs instead of Node.js APIs
+- Provides built-in WebSocket support without additional dependencies
+- Leverages Bun's bundler for faster builds
+- Offers better performance and lower memory usage
+
+## Migration from adapter-node
+
+1. Install the adapter: `bun add -D svelte-adapter-bun`
+2. Update `svelte.config.js` to use the new adapter
+3. Replace `npm/yarn` commands with `bun` equivalents
+4. Enjoy the performance boost! ��
 
 ## License
 
-MIT License - see LICENSE file for details.
-
-## Acknowledgments
-
-- Built for [SvelteKit](https://kit.svelte.dev/)
-- Powered by [Bun](https://bun.sh/)
-- Inspired by `@sveltejs/adapter-node`
-- Special thanks to [gornostay25/svelte-adapter-bun](https://github.com/gornostay25/svelte-adapter-bun) and [TheOrdinaryWow/svelte-adapter-bun-next](https://github.com/TheOrdinaryWow/svelte-adapter-bun-next/)
+MIT

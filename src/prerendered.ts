@@ -1,16 +1,14 @@
-// @ts-ignore - MANIFEST is replaced at build time
-import { prerendered } from 'MANIFEST';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { existsSync } from 'fs';
-import type { Handler } from './types.js';
+import type { Handler } from './types.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Create prerendered page handler
  */
-export function createPrerenderedHandler(): Handler {
+export function createPrerenderedHandler(prerendered: Set<string>): Handler {
   return async function prerenderedHandler(request: Request): Promise<Response | null> {
     const url = new URL(request.url);
     

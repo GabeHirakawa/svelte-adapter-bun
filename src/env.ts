@@ -1,27 +1,31 @@
 /**
  * Environment variable helper with prefix support
  */
+export function env(name: string): string | undefined;
+export function env(name: string, defaultValue: string | number): string;
 export function env(name: string, defaultValue?: string | number): string | undefined {
-  const prefixed = `${ENV_PREFIX}${name}`;
-  const value = process.env[prefixed] ?? process.env[name];
+  const value = process.env[name];
   
   if (value !== undefined) {
     return value;
   }
   
-  // If defaultValue is explicitly undefined, return undefined (don't throw)
+  // If defaultValue is provided, return it as string
   if (arguments.length > 1) {
     return defaultValue === undefined ? undefined : String(defaultValue);
   }
   
-  throw new Error(`Environment variable ${prefixed} (or ${name}) is required`);
+  // Return undefined if no default provided (don't throw)
+  return undefined;
 }
 
 /**
  * Get environment variable as integer
  */
 export function envInt(name: string, defaultValue?: number): number {
-  const value = env(name, defaultValue?.toString());
+  const value = defaultValue !== undefined 
+    ? env(name, defaultValue.toString())
+    : env(name);
 
   if (value === undefined) {
     throw new Error(`Environment variable ${name} is required for integer parsing`);
@@ -40,7 +44,9 @@ export function envInt(name: string, defaultValue?: number): number {
  * Get environment variable as boolean
  */
 export function envBool(name: string, defaultValue?: boolean): boolean {
-  const value = env(name, defaultValue?.toString());
+  const value = defaultValue !== undefined 
+    ? env(name, defaultValue.toString())
+    : env(name);
   
   if (value === undefined) {
     return false;

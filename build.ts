@@ -74,9 +74,17 @@ const distPkg = {
 
 await Bun.write("dist/package.json", JSON.stringify(distPkg, null, 2));
 
-// Copy src directory to files in dist
+// Copy src directory to files in dist, excluding hooks.example.ts
 if (existsSync("src")) {
-  await Bun.$`cp -r src dist/files`;
+  await Bun.$`mkdir -p dist/files`;
+  // Copy all files except hooks.example.ts
+  const srcFiles = await Bun.$`find src -type f -name "*.ts" ! -name "hooks.example.ts"`.text();
+  const files = srcFiles.trim().split('\n').filter(f => f);
+  
+  for (const file of files) {
+    await Bun.$`cp ${file} dist/files/`;
+  }
+  
   console.log("📁 Copied src directory to dist/files");
 }
 

@@ -61,8 +61,8 @@ export default function (opts: AdapterOptions = {}) {
         builder.mkdirp(out);
 
         builder.log.minor("Copying assets");
-        builder.writeClient(`${out}/client${builder.config.kit.paths.base}`);
-        builder.writePrerendered(`${out}/prerendered${builder.config.kit.paths.base}`);
+        builder.writeClient(join(out, "client", builder.config.kit.paths.base));
+        builder.writePrerendered(join(out, "prerendered", builder.config.kit.paths.base));
 
         if (precompress) {
           builder.log.minor("Compressing assets");

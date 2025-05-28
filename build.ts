@@ -14,8 +14,7 @@ const external = [
   "@sveltejs/kit/*"
 ];
 
-console.log("🔨 Building svelte-adapter-bun with Bun bundler...");
-console.log("📦 External dependencies:", external);
+console.log("🔨 Building svelte-adapter-bun...");
 
 // Clean output directory
 if (existsSync("dist")) {
@@ -113,7 +112,7 @@ if (existsSync("src")) {
     await Bun.$`cp ${file} dist/files/`;
   }
   
-  console.log("📁 Copied src directory to dist/files");
+  console.log("📁 Copied runtime files to dist/files");
 }
 
 // Generate TypeScript declarations
@@ -126,13 +125,8 @@ try {
 }
 
 console.log("🎉 Build complete! Output in ./dist");
-console.log("📊 Bundle analysis:");
 
-// Show bundle size
+// Show simple bundle stats
 const bundleStats = await Bun.file("dist/index.js").text();
 const bundleSize = new TextEncoder().encode(bundleStats).length;
-console.log(`   Bundle size: ${(bundleSize / 1024).toFixed(2)} KB`);
-
-// Show what was bundled vs external
-console.log("   Bundled dependencies: dev dependencies and internal modules");
-console.log("   External dependencies:", external.filter(dep => !dep.includes("*")).join(", ")); 
+console.log(`📊 Bundle size: ${(bundleSize / 1024).toFixed(2)} KB`); 

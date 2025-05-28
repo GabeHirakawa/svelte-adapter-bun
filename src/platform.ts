@@ -45,9 +45,9 @@ export async function getRequest({
     
     if (host_header && request.headers.get(host_header)) {
       const host = request.headers.get(host_header);
-      if (host && /^[a-zA-Z0-9.-]+(?::\d+)?$/.test(host)) {
-        url.host = host;
-      }
+      if (host && isValidHost(host)) {
+         url.host = host;
+       }
     }
     
     if (port_header && request.headers.get(port_header)) {
@@ -139,4 +139,21 @@ export function setCookie(
     statusText: response.statusText,
     headers
   });
+}
+
+function isValidHost(host: string): boolean {
+  // Remove port if present
+  const [hostname, port] = host.split(':');
+  
+  // Validate hostname (basic DNS name validation)
+  if (!hostname || !/^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/.test(hostname)) {
+    return false;
+  }
+  
+  // Validate port if present
+  if (port && (!/^\d+$/.test(port) || parseInt(port, 10) < 1 || parseInt(port, 10) > 65535)) {
+    return false;
+  }
+  
+  return true;
 } 

@@ -1,14 +1,45 @@
 {
-  "name": "svelte-adapter-bun",
-  "module": "index.ts",
-  "type": "module",
-  "private": true,
+  "name": "@gkh/svelte-adapter-bun",
+  "version": "1.0.2",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "author": "Gabriel Hirakawa",
+  "homepage": "https://github.com/gabehirakawa/svelte-adapter-bun",
   "devDependencies": {
     "@sveltejs/kit": "^2.21.1",
     "@types/bun": "latest",
-    "bun-types": "^1.2.14"
+    "bun-types": "^1.2.14",
+    "tiny-glob": "^0.2.9"
   },
   "peerDependencies": {
     "typescript": "^5"
-  }
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "description": "SvelteKit adapter for Bun with optimized bundling using Bun's native bundler",
+  "engines": {
+    "bun": ">=1.0.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "svelte",
+    "sveltekit",
+    "adapter",
+    "bun",
+    "bundler",
+    "server"
+  ],
+  "license": "MIT",
+  "scripts": {
+    "build": "bun run build.ts",
+    "dev": "bun run index.ts",
+    "prepublishOnly": "bun run build"
+  },
+  "type": "module"
 }

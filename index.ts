@@ -26,6 +26,13 @@ interface AdapterOptions {
   dynamic_origin?: boolean;
   xff_depth?: number;
   assets?: boolean;
+  websocket?: {
+    enabled?: boolean;
+    path?: string;
+    compression?: boolean;
+    maxCompressedSize?: number;
+    maxBackpressure?: number;
+  };
 }
 
 interface CompressOptions {
@@ -43,6 +50,7 @@ export default function (opts: AdapterOptions = {}) {
     dynamic_origin = false,
     xff_depth = 1,
     assets = true,
+    websocket = { enabled: false, path: '/ws', compression: true },
   } = opts;
   
   return {
@@ -100,6 +108,10 @@ export default function (opts: AdapterOptions = {}) {
         
         // Replace configuration values
         entryContent = entryContent.replace(/xff_depth: 1/, `xff_depth: ${xff_depth}`);
+        entryContent = entryContent.replace(
+          /websocket: \{[^}]+\}/,
+          `websocket: ${JSON.stringify(websocket)}`
+        );
         
         await Bun.write(indexPath, entryContent);
 

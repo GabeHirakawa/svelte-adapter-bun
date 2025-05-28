@@ -1,8 +1,22 @@
 import { existsSync, statSync } from "fs";
 import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 import glob from "tiny-glob";
 import type { Builder } from "@sveltejs/kit"
-const files = fileURLToPath(new URL("./files", import.meta.url).href);
+
+// Resolve the files directory relative to the adapter's location
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// Check if we're running from source (development) or dist (production)
+let files = join(__dirname, "files");
+if (!existsSync(files)) {
+  // Try dist/files (when running from source)
+  files = join(__dirname, "dist", "files");
+  if (!existsSync(files)) {
+    // Try src directory (when running from source without build)
+    files = join(__dirname, "src");
+  }
+}
 
 interface AdapterOptions {
   out?: string;
@@ -12,6 +26,13 @@ interface AdapterOptions {
   dynamic_origin?: boolean;
   xff_depth?: number;
   assets?: boolean;
+  websocket?: {
+    enabled?: boolean;
+    path?: string;
+    compression?: boolean;
+    maxCompressedSize?: number;
+    maxBackpressure?: number;
+  };
 }
 
 interface CompressOptions {
@@ -29,92 +50,123 @@ export default function (opts: AdapterOptions = {}) {
     dynamic_origin = false,
     xff_depth = 1,
     assets = true,
+    websocket = { enabled: false, path: '/ws', compression: true },
   } = opts;
   
   return {
     name: "svelte-adapter-bun",
     async adapt(builder: Builder) {
-      builder.rimraf(out);
-      builder.mkdirp(out);
-
-      builder.log.minor("Copying assets");
-      builder.writeClient(`${out}/client${builder.config.kit.paths.base}`);
-      builder.writePrerendered(`${out}/prerendered${builder.config.kit.paths.base}`);
-
-      if (precompress) {
-        builder.log.minor("Compressing assets");
-        await Promise.all([
-          compress(`${out}/client`, precompress),
-          compress(`${out}/prerendered`, precompress),
-        ]);
-      }
-
-      builder.log.minor("Building server");
-      builder.writeServer(`${out}/server`);
-
-      // Use Bun.write instead of writeFileSync
-      await Bun.write(
-        `${out}/manifest.js`,
-        `export const manifest = ${builder.generateManifest({ relativePath: "./server" })};\n\n` +
-          `export const prerendered = new Set(${JSON.stringify(builder.prerendered.paths)});\n`,
-      );
-
-      builder.log.minor("Patching server (websocket support)");
-      await patchServerWebsocketHandler(`${out}/server`);
-
-      // Use Bun.file to read package.json
-      const pkg = await Bun.file("package.json").json().catch(() => ({}));
-
-      // Copy and compile TypeScript files to JavaScript
-      builder.log.minor("Compiling TypeScript runtime files");
-      
-      // First copy the files directory
-      builder.copy(files, out, {
-        replace: {
-          SERVER: "./server/index.js",
-          MANIFEST: "./manifest.js",
-          ENV_PREFIX: JSON.stringify(envPrefix),
-          dotENV_PREFIX: envPrefix,
-          BUILD_OPTIONS: `{ development: ${development}, dynamic_origin: ${dynamic_origin}, xff_depth: ${xff_depth}, assets: ${assets} }`,
-        },
-      });
-      
-      // Then compile TypeScript files to JavaScript
-      await compileTypeScriptFiles(out, {
-        SERVER: "./server/index.js",
-        MANIFEST: "./manifest.js", 
-        ENV_PREFIX: JSON.stringify(envPrefix),
-        BUILD_OPTIONS: `{ development: ${development}, dynamic_origin: ${dynamic_origin}, xff_depth: ${xff_depth}, assets: ${assets} }`,
-      });
-
-      let package_data = {
-        name: "bun-sveltekit-app",
-        version: "0.0.0",
-        type: "module",
-        private: true,
-        main: "index.js",
-        scripts: {
-          start: "bun ./index.js",
-        },
-        dependencies: { },
-      };
-
       try {
-        pkg.name && (package_data.name = pkg.name);
-        pkg.version && (package_data.version = pkg.version);
-        pkg.dependencies &&
-          (package_data.dependencies = {
-            ...pkg.dependencies,
-            ...package_data.dependencies,
-          });
+        builder.rimraf(out);
+        builder.mkdirp(out);
+
+        builder.log.minor("Copying assets");
+        builder.writeClient(`${out}/client${builder.config.kit.paths.base}`);
+        builder.writePrerendered(`${out}/prerendered${builder.config.kit.paths.base}`);
+
+        if (precompress) {
+          builder.log.minor("Compressing assets");
+          await Promise.all([
+            compress(`${out}/client`, precompress),
+            compress(`${out}/prerendered`, precompress),
+          ]);
+        }
+
+        builder.log.minor("Building server");
+        builder.writeServer(`${out}/server`);
+
+        // Generate manifest file
+        await Bun.write(
+          `${out}/manifest.js`,
+          `export const manifest = ${builder.generateManifest({ relativePath: "./server" })};\n\n` +
+            `export const prerendered = new Set(${JSON.stringify(builder.prerendered.paths)});\n`,
+        );
+
+        // Read the app's package.json (not the adapter's)
+        const pkg = await Bun.file("package.json").json().catch(() => ({}));
+
+        builder.log.minor(`Bundling with production dependencies external`);
+
+        // Use SvelteKit's recommended intermediate directory
+        const tempDir = ".svelte-kit/svelte-adapter-bun";
+        builder.rimraf(tempDir);
+        builder.mkdirp(tempDir);
+
+        builder.log.minor("Preparing runtime files");
+        if (existsSync(files)) {
+          builder.copy(files, tempDir);
+        } else {
+          throw new Error(`Runtime files directory not found: ${files}`);
+        }
+        
+        // Generate the main entry file with configuration
+        builder.log.minor("Generating server entry file");
+        
+        // Read the base index file
+        const indexPath = join(tempDir, "index.ts");
+        let entryContent = await Bun.file(indexPath).text();
+        
+        // Replace configuration values
+        entryContent = entryContent.replace(/xff_depth: 1/, `xff_depth: ${xff_depth}`);
+        entryContent = entryContent.replace(
+          /websocket: \{[^}]+\}/,
+          `websocket: ${JSON.stringify(websocket)}`
+        );
+        
+        await Bun.write(indexPath, entryContent);
+
+        // Bundle the server keeping production dependencies external
+        builder.log.minor("Bundling server with dependencies");
+        
+        const buildResult = await Bun.build({
+          entrypoints: [indexPath],
+          outdir: out,
+          target: "bun",
+          format: "esm",
+          splitting: true,
+          sourcemap: "external",
+          naming: {
+            entry: "index.js",
+            chunk: "chunks/[name]-[hash].js",
+            asset: "assets/[name]-[hash].[ext]"
+          },
+        });
+
+        if (!buildResult.success) {
+          builder.log.error("Build failed. Logs:");
+          for (const log of buildResult.logs) {
+            builder.log.error(`  ${log}`);
+          }
+          throw new Error('Bundle failed');
+        }
+
+        // Clean up intermediate directory
+        builder.rimraf(tempDir);
+
+        // Generate minimal package.json for deployment
+        const package_data = {
+          name: pkg.name || "bun-sveltekit-app",
+          version: pkg.version || "0.0.0",
+          type: "module",
+          private: true,
+          main: "index.js",
+          scripts: {
+            start: "bun ./index.js",
+          },
+          dependencies: pkg.dependencies || {},
+        };
+
+        await Bun.write(`${out}/package.json`, JSON.stringify(package_data, null, 2));
+
+        builder.log.success(`Start server with: bun ./${out}/index.js`);
       } catch (error) {
-        builder.log.warn(`Parse package.json error: ${(error as Error).message}`);
+        builder.log.error("Adapter failed:");
+        builder.log.error(error instanceof Error ? error.message : String(error));
+        if (error instanceof Error && error.stack) {
+          builder.log.error(error.stack);
+        }
+        throw error;
       }
-
-      // Use Bun.write instead of writeFileSync
-      await Bun.write(`${out}/package.json`, JSON.stringify(package_data, null, "\t"));
-
-      builder.log.success(`Start server with: bun ./${out}/index.js`);
     },
   };
 }
@@ -181,90 +233,4 @@ async function compress_file(file: string, format: "gz" | "br" = "gz") {
 
   // Use Bun.write to write the compressed file
   await Bun.write(`${file}.${format}`, compressed);
-}
-
-/**
- * Compile TypeScript files to JavaScript with replacements
- */
-async function compileTypeScriptFiles(out: string, replacements: Record<string, string>) {
-  const tsFiles = await glob("**/*.ts", {
-    cwd: out,
-    absolute: true,
-    filesOnly: true,
-  });
-
-  for (const tsFile of tsFiles) {
-    try {
-      // Skip types.ts file as it only contains type declarations
-      if (tsFile.endsWith('types.ts')) {
-        await Bun.$`rm ${tsFile}`;
-        continue;
-      }
-      
-      // Read TypeScript file
-      let content = await Bun.file(tsFile).text();
-      
-      // Apply replacements only in import statements and specific contexts
-      for (const [key, value] of Object.entries(replacements)) {
-        // Replace in import statements
-        content = content.replaceAll(`from '${key}'`, `from ${value}`);
-        content = content.replaceAll(`from "${key}"`, `from ${value}`);
-        // Replace standalone references
-        content = content.replaceAll(`'${key}'`, value);
-        content = content.replaceAll(`"${key}"`, value);
-      }
-      
-      // Write to a temporary file and compile it
-      const tempFile = tsFile.replace('.ts', '.temp.ts');
-      await Bun.write(tempFile, content);
-      
-      // Compile TypeScript to JavaScript using Bun's transpiler
-      const transpiled = await Bun.build({
-        entrypoints: [tempFile],
-        target: "node",
-        format: "esm",
-        minify: false,
-        external: ["MANIFEST", "SERVER"],
-      });
-      
-      if (transpiled.success && transpiled.outputs.length > 0) {
-        const jsContent = await transpiled.outputs[0]!.text();
-        const jsFile = tsFile.replace('.ts', '.js');
-        
-        // Write JavaScript file
-        await Bun.write(jsFile, jsContent);
-        
-        // Remove TypeScript and temp files
-        await Bun.$`rm ${tsFile} ${tempFile}`;
-      } else {
-        console.error(`Failed to compile ${tsFile}`);
-        for (const message of transpiled.logs) {
-          console.error(message);
-        }
-        // Clean up temp file
-        await Bun.$`rm -f ${tempFile}`;
-      }
-    } catch (error) {
-      console.error(`Error compiling ${tsFile}:`, error);
-    }
-  }
-}
-
-/**
- * @param {string} out
- */
-async function patchServerWebsocketHandler(out: string) {
-  // Use Bun.file to read the file
-  const src = await Bun.file(`${out}/index.js`).text();
-  
-  const regex_gethook = /(this\.#options\.hooks\s+=\s+{)\s+(handle:)/gm;
-  const substr_gethook = `$1 \nhandleWebsocket: module.handleWebsocket || null,\n$2`;
-  const result1 = src.replace(regex_gethook, substr_gethook);
-
-  const regex_sethook = /(this\.#options\s+=\s+options;)/gm;
-  const substr_sethook = `$1\nthis.websocket = ()=>this.#options.hooks.handleWebsocket;`;
-  const result = result1.replace(regex_sethook, substr_sethook);
-
-  // Use Bun.write to write the patched file
-  await Bun.write(`${out}/index.js`, result);
 }

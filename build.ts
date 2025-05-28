@@ -22,7 +22,7 @@ if (existsSync("dist")) {
   await Bun.$`rm -rf dist`;
 }
 
-// Bundle the adapter
+// Bundle the main adapter
 const result = await Bun.build({
   entrypoints: ["./index.ts"],
   outdir: "./dist",
@@ -45,6 +45,29 @@ if (!result.success) {
   process.exit(1);
 }
 
+// Bundle the websocket types separately
+const websocketResult = await Bun.build({
+  entrypoints: ["./src/websocket.ts"],
+  outdir: "./dist",
+  target: "node",
+  format: "esm",
+  external,
+  minify: false,
+  sourcemap: "external",
+  splitting: false,
+  naming: {
+    entry: "websocket.js"
+  }
+});
+
+if (!websocketResult.success) {
+  console.error("❌ WebSocket build failed:");
+  for (const message of websocketResult.logs) {
+    console.error(message);
+  }
+  process.exit(1);
+}
+
 console.log("✅ Build successful!");
 
 // Copy package.json and update it for distribution
@@ -57,10 +80,15 @@ const distPkg = {
   module: "index.js",
   exports: {
     ".": {
-      "import": "./index.js"
+      "import": "./index.js",
+      "types": "./index.d.ts"
+    },
+    "./websocket": {
+      "import": "./websocket.js",
+      "types": "./websocket.d.ts"
     }
   },
-  files: ["index.js", "index.js.map", "files"],
+  files: ["index.js", "index.js.map", "websocket.js", "websocket.js.map", "*.d.ts", "files"],
   keywords: pkg.keywords,
   author: pkg.author,
   license: pkg.license,
@@ -74,9 +102,17 @@ const distPkg = {
 
 await Bun.write("dist/package.json", JSON.stringify(distPkg, null, 2));
 
-// Copy src directory to files in dist
+// Copy src directory to files in dist, excluding hooks.example.ts
 if (existsSync("src")) {
-  await Bun.$`cp -r src dist/files`;
+  await Bun.$`mkdir -p dist/files`;
+  // Copy all files except hooks.example.ts
+  const srcFiles = await Bun.$`find src -type f -name "*.ts" ! -name "hooks.example.ts"`.text();
+  const files = srcFiles.trim().split('\n').filter(f => f);
+  
+  for (const file of files) {
+    await Bun.$`cp ${file} dist/files/`;
+  }
+  
   console.log("📁 Copied src directory to dist/files");
 }
 
@@ -85,7 +121,8 @@ try {
   await Bun.$`bunx tsc --declaration --emitDeclarationOnly --outDir dist`;
   console.log("📝 Generated TypeScript declarations");
 } catch (error) {
-  console.warn("⚠️  Failed to generate TypeScript declarations:", error);
+  console.error("❌ Failed to generate TypeScript declarations:", error);
+  process.exit(1);
 }
 
 console.log("🎉 Build complete! Output in ./dist");

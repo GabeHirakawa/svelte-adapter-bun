@@ -13,15 +13,12 @@ export const handleWebsocket = {
    * Called when a WebSocket connection is opened
    */
   open(ws: any) {
-    console.log('WebSocket opened:', ws.data);
-    ws.send('Welcome to the WebSocket server!');
   },
 
   /**
    * Called when a WebSocket message is received
    */
   message(ws: any, message: string | Buffer) {
-    console.log('WebSocket message:', message);
     
     // Echo the message back
     if (typeof message === 'string') {
@@ -38,14 +35,12 @@ export const handleWebsocket = {
    * Called when a WebSocket connection is closed
    */
   close(ws: any, code: number, reason: string) {
-    console.log('WebSocket closed:', code, reason);
   },
 
   /**
    * Called when the WebSocket is ready to receive more data
    */
   drain(ws: any) {
-    console.log('WebSocket drain:', ws.data);
   },
 
   /**

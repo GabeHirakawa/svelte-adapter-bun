@@ -24,9 +24,6 @@ export async function createServer(config: ServerConfig) {
       const importHooks = new Function('return import("./server/chunks/hooks.server.js").catch(() => null)');
       const hooks = await importHooks();
       handleWebsocket = hooks?.handleWebsocket;
-      if (handleWebsocket) {
-        console.log('WebSocket handler loaded from hooks.server.js');
-      }
     } catch (error) {
       // No WebSocket handler - that's fine
     }

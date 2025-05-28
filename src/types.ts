@@ -45,29 +45,9 @@ export interface WebSocketConfig {
 }
 
 /**
- * WebSocket handler following SvelteKit hooks pattern
+ * WebSocket handler that extends Bun's native WebSocketHandler for SvelteKit integration
  */
-export interface WebSocketHandler {
-  /**
-   * Called when a WebSocket connection is opened
-   */
-  open?(ws: any): void | Promise<void>;
-  
-  /**
-   * Called when a WebSocket message is received
-   */
-  message?(ws: any, message: string | Buffer): void | Promise<void>;
-  
-  /**
-   * Called when a WebSocket connection is closed
-   */
-  close?(ws: any, code?: number, reason?: string): void | Promise<void>;
-  
-  /**
-   * Called when WebSocket backpressure is relieved
-   */
-  drain?(ws: any): void | Promise<void>;
-  
+export interface WebSocketHandler extends Omit<Bun.WebSocketHandler<any>, 'upgrade'> {
   /**
    * Called to determine if a request should be upgraded to WebSocket
    * Return true to upgrade, false to skip

@@ -58,7 +58,7 @@ adapter({
 })
 ```
 
-The runtime serves those siblings when `Accept-Encoding` includes `br` or `gzip` (brotli first). Set `assets: false` if something else should serve the files.
+The runtime serves those siblings when `Accept-Encoding` includes `br` or `gzip` (brotli first). Single `Range: bytes=` requests get `206` (`Bun.file.slice`). Multiple ranges are ignored and the full file is returned (no multipart). Set `assets: false` if something else should serve the files.
 
 ## WebSocket Support
 
@@ -234,11 +234,11 @@ Intentional differences:
 | Listen | With no `envPrefix`, `port` is omitted so Bun 1.4 can read `PORT` / `BUN_PORT` / `NODE_PORT` | Passing `port: 3000` always shadows those vars |
 | Client address | One policy: `ADDRESS_HEADER` (XFF from the right by `XFF_DEPTH`) or `Bun.Server.requestIP`. The incoming `X-Forwarded-For` header is not rewritten. Bad `XFF_DEPTH` / a missing address header fail the request | The previous split (rewrite-from-the-right, then read left-most, else `127.0.0.1`) was two policies and hid the real peer |
 | `xff_depth` option | Still accepted; used only when `XFF_DEPTH` is unset | Deploy env is the runtime source of truth, matching the rest of deploy env |
-| Assets | `assets` (not `serveAssets`). `Bun.file` plus `.br` / `.gz` negotiation, not sirv | Avoid a Node static-server dependency; precompress already wrote the siblings |
+| Assets | `assets` (not `serveAssets`). `Bun.file` plus `.br` / `.gz` negotiation, not sirv. Single byte ranges only (multipart ranges → full file) | Avoid a Node static-server dependency; precompress already wrote the siblings |
 | `BODY_SIZE_LIMIT` | `Infinity` / `0` / `none` disable the cap | adapter-node’s documented off switch; gornostay rejects `Infinity` at boot |
 | `IDLE_TIMEOUT` | Must be `0`–`255` (Bun per-connection idle). Out-of-range values throw a clear error | Bun will crash on `256+`. This is not adapter-node’s process idle-shutdown |
 
-Not ported yet: HTTP range requests.
+Not ported yet: multipart byte ranges.
 
 ## License
 

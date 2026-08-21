@@ -2,6 +2,7 @@ import path from "path";
 import { existsSync, statSync } from "fs";
 import type { Handler, MimeTypeMap } from "./types.ts";
 import { pickCompressedSibling, resolveSafePath } from "./asset.ts";
+import { fileRangeResponse } from "./range.ts";
 
 function getMimeType(pathname: string): string | undefined {
   const ext = pathname.split(".").pop()?.toLowerCase();
@@ -43,8 +44,7 @@ export function createStaticHandler(
       request.headers.get("accept-encoding") ?? undefined,
       existsSync,
     );
-    const file = Bun.file(picked.path);
-    const mimeType = getMimeType(url.pathname) || file.type;
+    const mimeType = getMimeType(url.pathname) || Bun.file(picked.path).type;
     const headers: Record<string, string> = {
       "cache-control": url.pathname.includes("/_app/immutable/")
         ? "public, max-age=31536000, immutable"
@@ -59,6 +59,6 @@ export function createStaticHandler(
       headers["vary"] = "accept-encoding";
     }
 
-    return new Response(file, { headers });
+    return fileRangeResponse(picked.path, request, headers);
   };
 }

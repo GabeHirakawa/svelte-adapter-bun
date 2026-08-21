@@ -2,6 +2,7 @@ import path from "path";
 import { existsSync } from "fs";
 import type { Handler } from "./types.ts";
 import { pickCompressedSibling } from "./asset.ts";
+import { fileRangeResponse } from "./range.ts";
 
 function prerenderedFile(root: string, pathname: string): string | null {
   if (pathname === "/") {
@@ -48,6 +49,6 @@ export function createPrerenderedHandler(
       headers["vary"] = "accept-encoding";
     }
 
-    return new Response(Bun.file(picked.path), { headers });
+    return fileRangeResponse(picked.path, request, headers);
   };
 }

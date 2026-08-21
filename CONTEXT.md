@@ -45,8 +45,8 @@ What `getClientAddress` returns for SvelteKit. If `ADDRESS_HEADER` is set, read 
 _Avoid_: left-most XFF, 127.0.0.1 fallback
 
 **Serve assets**:
-When `assets` is true, the runtime serves files from `client/` and `prerendered/`, including `.br` / `.gz` siblings when `Accept-Encoding` asks. When false, those requests go to SvelteKit.
-_Avoid_: sirv, serveAssets
+When `assets` is true, the runtime serves files from `client/` and `prerendered/`, including `.br` / `.gz` siblings when `Accept-Encoding` asks. Single `Range: bytes=` requests return `206`. When false, those requests go to SvelteKit.
+_Avoid_: sirv, serveAssets, multipart ranges
 
 **Serve limits**:
 `BODY_SIZE_LIMIT` (bytes, optional K/M/G) becomes `Bun.serve` `maxRequestBodySize`. `IDLE_TIMEOUT` is Bun’s per-connection idle seconds (0–255). `Infinity` / `0` / `none` disable the body cap.

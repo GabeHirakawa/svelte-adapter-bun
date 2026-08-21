@@ -28,7 +28,7 @@ export async function createServer(config: ServerConfig) {
   const origin = env('ORIGIN');
   const address_header = (env('ADDRESS_HEADER', '') ?? '').toLowerCase();
   const protocol_header = (env('PROTOCOL_HEADER', '') ?? '').toLowerCase();
-  const host_header = (env('HOST_HEADER', 'host') ?? 'host').toLowerCase();
+  const host_header = (env('HOST_HEADER', '') ?? '').toLowerCase();
   const port_header = (env('PORT_HEADER', '') ?? '').toLowerCase();
   const buildOptions = typeof BUILD_OPTIONS === "undefined" ? {} : BUILD_OPTIONS;
   const xff_depth = Number.parseInt(env("XFF_DEPTH", xffDepthFromBuild(buildOptions)), 10);

@@ -51,3 +51,7 @@ _Avoid_: sirv, serveAssets, multipart ranges
 **Serve limits**:
 `BODY_SIZE_LIMIT` (bytes, optional K/M/G) becomes `Bun.serve` `maxRequestBodySize`. `IDLE_TIMEOUT` is Bun’s per-connection idle seconds (0–255). `Infinity` / `0` / `none` disable the body cap.
 _Avoid_: process idle shutdown (adapter-node’s meaning of IDLE_TIMEOUT)
+
+**Request origin**:
+The public URL origin for `event.url`. `ORIGIN` wins. Otherwise `PROTOCOL_HEADER` (default `https` — TLS-terminating proxies) + `HOST_HEADER` or `Host` + optional `PORT_HEADER` (only when the host has no port).
+_Avoid_: request.url as-is, default http

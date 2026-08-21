@@ -140,6 +140,8 @@ With no prefix, `PORT` is omitted from `Bun.serve` so Bun 1.4 can read `PORT`, `
 ADDRESS_HEADER=X-Forwarded-For XFF_DEPTH=2 bun ./build/index.js
 ```
 
+The public origin for `event.url` is `ORIGIN` if set. Otherwise it is `PROTOCOL_HEADER` (default `https` — typical behind a TLS-terminating proxy) + `HOST_HEADER` or the request `Host` + optional `PORT_HEADER` (appended only when the host has no port). If `PROTOCOL_HEADER` is unset, the protocol is `https` so CSRF checks match the browser origin when Bun.serve only saw `http`.
+
 `BODY_SIZE_LIMIT` caps the request body (`512K` default; suffixes `K` / `M` / `G`). `Infinity`, `0`, or `none` disables the cap (adapter-node’s documented off switch — gornostay rejects `Infinity`).
 
 `IDLE_TIMEOUT` is Bun’s **per-connection** idle timeout in seconds (`10` default, range `0`–`255`). Values outside that range fail at boot instead of crashing `Bun.serve`. This is not adapter-node’s process idle-shutdown timer.
@@ -237,6 +239,7 @@ Intentional differences:
 | Assets | `assets` (not `serveAssets`). `Bun.file` plus `.br` / `.gz` negotiation, not sirv. Single byte ranges only (multipart ranges → full file) | Avoid a Node static-server dependency; precompress already wrote the siblings |
 | `BODY_SIZE_LIMIT` | `Infinity` / `0` / `none` disable the cap | adapter-node’s documented off switch; gornostay rejects `Infinity` at boot |
 | `IDLE_TIMEOUT` | Must be `0`–`255` (Bun per-connection idle). Out-of-range values throw a clear error | Bun will crash on `256+`. This is not adapter-node’s process idle-shutdown |
+| Request origin | `ORIGIN`, or forwarded headers with protocol default `https`. Empty `HOST_HEADER` means use `Host`. `PORT_HEADER` is not appended when the host already has a port | Same shape as gornostay. Default `https` keeps CSRF working behind TLS-terminating proxies (`request.url` on Bun.serve is usually `http`) |
 
 Not ported yet: multipart byte ranges.
 

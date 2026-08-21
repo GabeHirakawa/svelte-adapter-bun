@@ -55,3 +55,7 @@ _Avoid_: process idle shutdown (adapter-node’s meaning of IDLE_TIMEOUT)
 **Request origin**:
 The public URL origin for `event.url`. `ORIGIN` wins. Otherwise `PROTOCOL_HEADER` (default `https` — TLS-terminating proxies) + `HOST_HEADER` or `Host` + optional `PORT_HEADER` (only when the host has no port).
 _Avoid_: request.url as-is, default http
+
+**Kit read**:
+`supports.read` is true. `Server.init` gets `read` that streams a file under `client` + `paths.base` via `Bun.file`, using the same path-traversal rule as serve assets.
+_Avoid_: no init.read, Node createReadableStream

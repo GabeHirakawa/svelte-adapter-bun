@@ -30,7 +30,7 @@ export type WebSocketHandler = Bun.WebSocketHandler;
 // Declare global types for build-time replacements
 declare global {
   const ENV_PREFIX: string;
-  const BUILD_OPTIONS: { assets?: boolean; xff_depth?: number };
+  const BUILD_OPTIONS: { assets?: boolean; xff_depth?: number; base?: string };
   const SERVER: any;
   const MANIFEST: any;
 } 

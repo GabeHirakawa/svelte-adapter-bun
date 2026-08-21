@@ -5,6 +5,7 @@ import { getRequest, setResponse } from './platform.ts';
 import { kitPlatform, websocketFromKitServer } from './websocket.ts';
 import { clientAddress } from './client-address.ts';
 import { serveAssetsEnabled, xffDepthFromBuild } from './asset.ts';
+import { baseFromBuild, clientAssetRoot, kitRead } from './kit-read.ts';
 import { serveLimits } from './serve-limits.ts';
 
 interface ServerConfig {
@@ -17,9 +18,15 @@ export async function createServer(config: ServerConfig) {
   const { Server } = await import(config.manifestPath.replace('manifest.js', 'server/index.js'));
   const { manifest, prerendered } = await import(config.manifestPath);
 
+  const buildOptions = typeof BUILD_OPTIONS === "undefined" ? {} : BUILD_OPTIONS;
+  const base = baseFromBuild(buildOptions);
+
   // Initialize SvelteKit server
   const server = new Server(manifest);
-  await server.init({ env: process.env });
+  await server.init({
+    env: process.env,
+    read: (file) => kitRead(clientAssetRoot(import.meta.dir, base), file),
+  });
   const websocket = websocketFromKitServer(server);
 
   const listen = listenFromEnv(typeof ENV_PREFIX === "undefined" ? "" : ENV_PREFIX, Bun.env);
@@ -30,7 +37,6 @@ export async function createServer(config: ServerConfig) {
   const protocol_header = (env('PROTOCOL_HEADER', '') ?? '').toLowerCase();
   const host_header = (env('HOST_HEADER', '') ?? '').toLowerCase();
   const port_header = (env('PORT_HEADER', '') ?? '').toLowerCase();
-  const buildOptions = typeof BUILD_OPTIONS === "undefined" ? {} : BUILD_OPTIONS;
   const xff_depth = Number.parseInt(env("XFF_DEPTH", xffDepthFromBuild(buildOptions)), 10);
   const limits = serveLimits({
     BODY_SIZE_LIMIT: env("BODY_SIZE_LIMIT", "512K"),

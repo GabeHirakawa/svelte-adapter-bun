@@ -49,6 +49,9 @@ export default function (opts: AdapterOptions = {}) {
   
   return {
     name: "svelte-adapter-bun",
+    supports: {
+      read: () => true,
+    },
     async adapt(builder: Builder) {
       try {
         builder.rimraf(out);
@@ -123,7 +126,11 @@ export default function (opts: AdapterOptions = {}) {
           external: externalsFromPackageJson(pkg),
           define: {
             ENV_PREFIX: JSON.stringify(envPrefix),
-            BUILD_OPTIONS: JSON.stringify({ assets, xff_depth }),
+            BUILD_OPTIONS: JSON.stringify({
+              assets,
+              xff_depth,
+              base: builder.config.kit.paths.base ?? "",
+            }),
           },
           naming: {
             entry: "index.js",

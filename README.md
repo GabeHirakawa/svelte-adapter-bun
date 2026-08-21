@@ -142,6 +142,8 @@ ADDRESS_HEADER=X-Forwarded-For XFF_DEPTH=2 bun ./build/index.js
 
 The public origin for `event.url` is `ORIGIN` if set. Otherwise it is `PROTOCOL_HEADER` (default `https` — typical behind a TLS-terminating proxy) + `HOST_HEADER` or the request `Host` + optional `PORT_HEADER` (appended only when the host has no port). If `PROTOCOL_HEADER` is unset, the protocol is `https` so CSRF checks match the browser origin when Bun.serve only saw `http`.
 
+`read` from `$app/server` works. The adapter claims `supports.read` and `Server.init` streams files from `client/` (plus Kit `paths.base`) via `Bun.file`.
+
 `BODY_SIZE_LIMIT` caps the request body (`512K` default; suffixes `K` / `M` / `G`). `Infinity`, `0`, or `none` disables the cap (adapter-node’s documented off switch — gornostay rejects `Infinity`).
 
 `IDLE_TIMEOUT` is Bun’s **per-connection** idle timeout in seconds (`10` default, range `0`–`255`). Values outside that range fail at boot instead of crashing `Bun.serve`. This is not adapter-node’s process idle-shutdown timer.

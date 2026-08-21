@@ -3,6 +3,7 @@ import path from "path";
 export type BuildOptions = {
   assets?: boolean;
   xff_depth?: number;
+  base?: string;
 };
 
 export type CompressedPick = {

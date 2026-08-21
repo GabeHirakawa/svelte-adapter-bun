@@ -8,16 +8,6 @@ export interface RequestOptions {
   port_header?: string;
 }
 
-export interface CookieOptions {
-  domain?: string;
-  expires?: Date;
-  httpOnly?: boolean;
-  maxAge?: number;
-  path?: string;
-  sameSite?: 'strict' | 'lax' | 'none';
-  secure?: boolean;
-}
-
 export interface Platform {
   server: Bun.Server;
   request: Request;

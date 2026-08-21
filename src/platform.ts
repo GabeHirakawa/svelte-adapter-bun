@@ -1,5 +1,4 @@
-import { parse, serialize } from 'cookie';
-import type { RequestOptions, CookieOptions } from './types.ts';
+import type { RequestOptions } from './types.ts';
 import { requestOrigin } from './origin.ts';
 
 /**
@@ -73,34 +72,6 @@ export function setResponse(response: Response): Response {
       headers.append('set-cookie', cookie);
     });
   }
-  
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers
-  });
-}
-
-/**
- * Parse cookies from request
- */
-export function getCookies(request: Request): Record<string, string> {
-  const cookieHeader = request.headers.get('cookie');
-  return cookieHeader ? parse(cookieHeader) : {};
-}
-
-/**
- * Set cookie in response
- */
-export function setCookie(
-  response: Response, 
-  name: string, 
-  value: string, 
-  options: CookieOptions = {}
-): Response {
-  const headers = new Headers(response.headers);
-  const cookieString = serialize(name, value, options);
-  headers.append('set-cookie', cookieString);
   
   return new Response(response.body, {
     status: response.status,

@@ -5,7 +5,7 @@ A SvelteKit adapter that emits a Bun deploy directory. Runtime contracts follow 
 ## Language
 
 **Adapt/bundle**:
-The module that turns SvelteKit builder output into a Bun deploy directory. This pass is only Bun.build plus the dep split — not runtime tokens, hosts, or WebSocket.
+The module that turns SvelteKit builder output into a Bun deploy directory. Dep split and Bun.build only — not runtime tokens or WebSocket.
 _Avoid_: rolldown path, smart bundling, build wrapper
 
 **Dep split**:
@@ -23,3 +23,11 @@ _Avoid_: bundled package
 **Deploy directory**:
 The `out` folder Adapt/bundle writes: server bundle, client/prerendered assets, `package.json` with production dependencies, and `bun.lock` when the app has one.
 _Avoid_: dist, build output (ambiguous with the adapter’s own package build)
+
+**Deploy env**:
+The listen and origin names Adapt/bundle’s runtime reads: `HOST`, `PORT`, `SOCKET_PATH`, `ORIGIN`, and the forwarded-header names. `envPrefix` applies only to these names.
+_Avoid_: $env, PUBLIC_ vars, app env
+
+**Listen options**:
+What `listenFromEnv` returns for `Bun.serve`: a Unix socket, or optional `hostname` / `port`. With no prefix, `port` is omitted so Bun reads `PORT` / `BUN_PORT` / `NODE_PORT`.
+_Avoid_: server options, bind config

@@ -1,4 +1,4 @@
-import { env } from './env.ts';
+import { env, listenFromEnv } from './env.ts';
 import { createStaticHandler } from './static.ts';
 import { createPrerenderedHandler } from './prerendered.ts';
 import { getRequest, setResponse } from './platform.ts';
@@ -33,11 +33,10 @@ export async function createServer(config: ServerConfig) {
   const server = new Server(manifest);
   await server.init({ env: process.env });
 
-  const port = parseInt(env('PORT', '3000') as string);
-  const host = env('HOST', '0.0.0.0') as string;
+  const listen = listenFromEnv(typeof ENV_PREFIX === "undefined" ? "" : ENV_PREFIX, Bun.env);
 
   // Configuration
-  const origin = process.env.ORIGIN;
+  const origin = env('ORIGIN');
   const address_header = (env('ADDRESS_HEADER', '') ?? '').toLowerCase();
   const protocol_header = (env('PROTOCOL_HEADER', '') ?? '').toLowerCase();
   const host_header = (env('HOST_HEADER', 'host') ?? 'host').toLowerCase();
@@ -128,8 +127,7 @@ export async function createServer(config: ServerConfig) {
 
   // Start the server with WebSocket support
   const serverOptions: any = {
-    port,
-    hostname: host,
+    ...listen,
     fetch: handler,
     error(error: Error) {
       console.error('Server error:', error);
@@ -193,7 +191,7 @@ export async function createServer(config: ServerConfig) {
 
   const server_instance = Bun.serve(serverOptions);
 
-  console.log(`Server running on http://${host}:${port}`);
+  console.log(`Server running on ${server_instance.url}`);
   if (config.websocket?.enabled && handleWebsocket) {
     console.log('WebSocket support enabled');
   }

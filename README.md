@@ -40,7 +40,7 @@ export default {
 |--------|------|---------|-------------|
 | `out` | `string` | `'build'` | The directory to write the built files to |
 | `precompress` | `boolean \| CompressOptions` | `false` | Enable precompression of assets |
-| `envPrefix` | `string` | `''` | Prefix for environment variables |
+| `envPrefix` | `string` | `''` | Prefix for deploy env (`HOST`, `PORT`, `SOCKET_PATH`, `ORIGIN`, forwarded-header names) |
 | `development` | `boolean` | `false` | Enable development mode (disables minification) |
 | `dynamic_origin` | `boolean` | `false` | Enable dynamic origin support |
 | `xff_depth` | `number` | `1` | X-Forwarded-For depth for trusted proxies |
@@ -110,15 +110,19 @@ See `src/hooks.example.ts` for a complete WebSocket implementation example.
 
 ## Environment Variables
 
-The adapter supports environment variables with optional prefixing:
+`envPrefix` prefixes the **deploy** variables (`HOST`, `PORT`, `SOCKET_PATH`, `ORIGIN`, and the forwarded-header names), not SvelteKit `$env` / `PUBLIC_*` app vars.
 
 ```js
 adapter({
-  envPrefix: 'PUBLIC_'
+  envPrefix: 'MY_'
 })
 ```
 
-This will make `PUBLIC_API_URL` available as `API_URL` in your app.
+```
+MY_HOST=127.0.0.1 MY_PORT=4000 MY_ORIGIN=https://my.site bun ./build/index.js
+```
+
+With no prefix, `PORT` is omitted from `Bun.serve` so Bun 1.4 can read `PORT`, `BUN_PORT`, or `NODE_PORT`. Set `SOCKET_PATH` to listen on a Unix socket instead.
 
 ## Building and Running
 

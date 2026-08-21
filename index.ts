@@ -128,6 +128,9 @@ export default function (opts: AdapterOptions = {}) {
           sourcemap: "external",
           packages: "bundle",
           external: externalsFromPackageJson(pkg),
+          define: {
+            ENV_PREFIX: JSON.stringify(envPrefix),
+          },
           naming: {
             entry: "index.js",
             chunk: "chunks/[name]-[hash].js",

@@ -39,12 +39,12 @@ export default {
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `out` | `string` | `'build'` | The directory to write the built files to |
-| `precompress` | `boolean \| CompressOptions` | `false` | Enable precompression of assets |
+| `precompress` | `boolean \| CompressOptions` | `false` | Write `.gz` / `.br` siblings next to client and prerendered files |
 | `envPrefix` | `string` | `''` | Prefix for deploy env (`HOST`, `PORT`, `SOCKET_PATH`, `ORIGIN`, forwarded-header names) |
 | `development` | `boolean` | `false` | Enable development mode (disables minification) |
 | `dynamic_origin` | `boolean` | `false` | Enable dynamic origin support |
 | `xff_depth` | `number` | `1` | Fallback `XFF_DEPTH` when the deploy env is unset |
-| `assets` | `boolean` | `true` | Serve static assets |
+| `assets` | `boolean` | `true` | Serve `client/` and `prerendered/` (including precompressed siblings). Set `false` to let a CDN / SvelteKit handle them |
 
 ### Compression Options
 
@@ -57,6 +57,8 @@ adapter({
   }
 })
 ```
+
+The runtime serves those siblings when `Accept-Encoding` includes `br` or `gzip` (brotli first). Set `assets: false` if something else should serve the files.
 
 ## WebSocket Support
 
@@ -224,8 +226,9 @@ Intentional differences:
 | Listen | With no `envPrefix`, `port` is omitted so Bun 1.4 can read `PORT` / `BUN_PORT` / `NODE_PORT` | Passing `port: 3000` always shadows those vars |
 | Client address | One policy: `ADDRESS_HEADER` (XFF from the right by `XFF_DEPTH`) or `Bun.Server.requestIP`. The incoming `X-Forwarded-For` header is not rewritten. Bad `XFF_DEPTH` / a missing address header fail the request | The previous split (rewrite-from-the-right, then read left-most, else `127.0.0.1`) was two policies and hid the real peer |
 | `xff_depth` option | Still accepted; used only when `XFF_DEPTH` is unset | Deploy env is the runtime source of truth, matching the rest of deploy env |
+| Assets | `assets` (not `serveAssets`). `Bun.file` plus `.br` / `.gz` negotiation, not sirv | Avoid a Node static-server dependency; precompress already wrote the siblings |
 
-Not ported yet: `BODY_SIZE_LIMIT` / `IDLE_TIMEOUT` on `Bun.serve`, and gornostay’s `serveAssets` / sirv path.
+Not ported yet: `BODY_SIZE_LIMIT` / `IDLE_TIMEOUT` on `Bun.serve`, and HTTP range requests.
 
 ## License
 

@@ -43,3 +43,7 @@ _Avoid_: isBun, upgrade callback
 **Client address**:
 What `getClientAddress` returns for SvelteKit. If `ADDRESS_HEADER` is set, read that header (for `x-forwarded-for`, from the right by `XFF_DEPTH`). If it is unset, use `Bun.Server.requestIP`. Do not rewrite the request’s `X-Forwarded-For`.
 _Avoid_: left-most XFF, 127.0.0.1 fallback
+
+**Serve assets**:
+When `assets` is true, the runtime serves files from `client/` and `prerendered/`, including `.br` / `.gz` siblings when `Accept-Encoding` asks. When false, those requests go to SvelteKit.
+_Avoid_: sirv, serveAssets

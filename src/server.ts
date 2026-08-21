@@ -4,6 +4,7 @@ import { createPrerenderedHandler } from './prerendered.ts';
 import { getRequest, setResponse } from './platform.ts';
 import { kitPlatform, websocketFromKitServer } from './websocket.ts';
 import { clientAddress } from './client-address.ts';
+import { serveAssetsEnabled } from './asset.ts';
 
 interface ServerConfig {
   manifestPath: string;
@@ -31,9 +32,11 @@ export async function createServer(config: ServerConfig) {
   const port_header = (env('PORT_HEADER', '') ?? '').toLowerCase();
   const xff_depth = Number.parseInt(env('XFF_DEPTH', config.xff_depth), 10);
 
-  // Create handlers
-  const staticHandler = createStaticHandler();
-  const prerenderedHandler = createPrerenderedHandler(prerendered);
+  const buildOptions = typeof BUILD_OPTIONS === "undefined" ? {} : BUILD_OPTIONS;
+  const staticHandler = serveAssetsEnabled(buildOptions) ? createStaticHandler() : async () => null;
+  const prerenderedHandler = serveAssetsEnabled(buildOptions)
+    ? createPrerenderedHandler(prerendered)
+    : async () => null;
 
   async function svelteKitHandler(request: Request, bunServer: Bun.Server) {
     const svelteRequest = await getRequest({

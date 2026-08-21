@@ -133,6 +133,7 @@ export default function (opts: AdapterOptions = {}) {
           external: externalsFromPackageJson(pkg),
           define: {
             ENV_PREFIX: JSON.stringify(envPrefix),
+            BUILD_OPTIONS: JSON.stringify({ assets }),
           },
           naming: {
             entry: "index.js",

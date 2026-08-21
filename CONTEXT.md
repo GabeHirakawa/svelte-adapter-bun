@@ -5,7 +5,7 @@ A SvelteKit adapter that emits a Bun deploy directory. Runtime contracts follow 
 ## Language
 
 **Adapt/bundle**:
-The module that turns SvelteKit builder output into a Bun deploy directory. Dep split and Bun.build only — not runtime tokens or WebSocket.
+The module that turns SvelteKit builder output into a Bun deploy directory. Dep split and Bun.build only — not runtime tokens.
 _Avoid_: rolldown path, smart bundling, build wrapper
 
 **Dep split**:
@@ -31,3 +31,11 @@ _Avoid_: $env, PUBLIC_ vars, app env
 **Listen options**:
 What `listenFromEnv` returns for `Bun.serve`: a Unix socket, or optional `hostname` / `port`. With no prefix, `port` is omitted so Bun reads `PORT` / `BUN_PORT` / `NODE_PORT`.
 _Avoid_: server options, bind config
+
+**Kit websocket**:
+The `export const websocket` (`Bun.WebSocketHandler`) from `hooks.server`. Adapt/bundle patches the Vite server so `Server.websocket()` returns it, and `Bun.serve` uses that handler.
+_Avoid_: handleWebsocket, adapter websocket option
+
+**Kit platform**:
+`event.platform` is `{ server, request }` so `handle` can call `event.platform.server.upgrade(event.platform.request)`.
+_Avoid_: isBun, upgrade callback

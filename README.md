@@ -60,45 +60,53 @@ adapter({
 
 ## WebSocket Support
 
-This adapter includes native WebSocket support using Bun's WebSocket API. To use WebSockets in your SvelteKit app:
-
-1. Create a `src/hooks.server.ts` file:
+Export `websocket` from `src/hooks.server.ts` (`Bun.WebSocketHandler`). Upgrade inside `handle` with `event.platform.server.upgrade(event.platform.request)`:
 
 ```ts
 import type { Handle } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  if (
+    request.headers.get('connection')?.toLowerCase().includes('upgrade') &&
+    request.headers.get('upgrade')?.toLowerCase() === 'websocket' &&
+    url.pathname.startsWith('/ws')
+  ) {
+    await event.platform.server.upgrade(event.platform.request);
+    return new Response(null, { status: 101 });
+  }
+
   return resolve(event);
 };
 
-// Export WebSocket handlers
-export const handleWebsocket = {
+export const websocket: Bun.WebSocketHandler = {
   open(ws) {
-    console.log('WebSocket opened');
     ws.send('Welcome!');
   },
-  
   message(ws, message) {
-    console.log('Received:', message);
-    ws.send(`Echo: ${message}`);
+    ws.send(message);
   },
-  
-  close(ws, code, reason) {
-    console.log('WebSocket closed:', code, reason);
-  },
-  
-  // Optional: Control upgrade behavior
-  upgrade(request, server) {
-    const url = new URL(request.url);
-    if (url.pathname === '/ws') {
-      return true; // Upgrade to WebSocket
-    }
-    return false;
-  }
 };
 ```
 
-2. Connect from the client:
+`event.platform` is `{ server, request }`. Declare it on `App.Platform` in `src/app.d.ts`:
+
+```ts
+declare global {
+  namespace App {
+    interface Platform {
+      server: Bun.Server;
+      request: Request;
+    }
+  }
+}
+
+export {};
+```
+
+Connect from the client:
 
 ```js
 const ws = new WebSocket('ws://localhost:3000/ws');
@@ -106,7 +114,7 @@ ws.onmessage = (event) => console.log(event.data);
 ws.send('Hello, server!');
 ```
 
-See `src/hooks.example.ts` for a complete WebSocket implementation example.
+See `src/hooks.example.ts` for a complete example.
 
 ## Environment Variables
 

@@ -2,13 +2,12 @@ import { env, listenFromEnv } from './env.ts';
 import { createStaticHandler } from './static.ts';
 import { createPrerenderedHandler } from './prerendered.ts';
 import { getRequest, setResponse } from './platform.ts';
-import type { WebSocketConfig, WebSocketHandler } from './types.ts';
+import { kitPlatform, websocketFromKitServer } from './websocket.ts';
 
 interface ServerConfig {
   manifestPath: string;
   prerenderedPaths: string[];
   xff_depth: number;
-  websocket?: WebSocketConfig;
 }
 
 export async function createServer(config: ServerConfig) {
@@ -16,22 +15,10 @@ export async function createServer(config: ServerConfig) {
   const { Server } = await import(config.manifestPath.replace('manifest.js', 'server/index.js'));
   const { manifest, prerendered } = await import(config.manifestPath);
 
-  // Try to load WebSocket handler from user's hooks.server.js at runtime using Function constructor
-  let handleWebsocket: WebSocketHandler | undefined;
-  if (config.websocket?.enabled) {
-    try {
-      // Use dynamic evaluation to avoid TypeScript import resolution
-      const importHooks = new Function('return import("./server/chunks/hooks.server.js").catch(() => null)');
-      const hooks = await importHooks();
-      handleWebsocket = hooks?.handleWebsocket;
-    } catch (error) {
-      // No WebSocket handler - that's fine
-    }
-  }
-
   // Initialize SvelteKit server
   const server = new Server(manifest);
   await server.init({ env: process.env });
+  const websocket = websocketFromKitServer(server);
 
   const listen = listenFromEnv(typeof ENV_PREFIX === "undefined" ? "" : ENV_PREFIX, Bun.env);
 
@@ -46,7 +33,7 @@ export async function createServer(config: ServerConfig) {
   const staticHandler = createStaticHandler();
   const prerenderedHandler = createPrerenderedHandler(prerendered);
 
-  async function svelteKitHandler(request: Request) {
+  async function svelteKitHandler(request: Request, bunServer: Bun.Server) {
     const svelteRequest = await getRequest({
       request,
       origin,
@@ -61,51 +48,14 @@ export async function createServer(config: ServerConfig) {
       getClientAddress() {
         return svelteRequest.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
       },
-      platform: { isBun: () => true }
+      platform: kitPlatform(bunServer, request)
     });
     
     return setResponse(response);
   }
 
-  async function handler(request: Request, server: any) {
+  async function handler(request: Request, bunServer: Bun.Server) {
     try {
-      // Try WebSocket upgrade first if we have a handleWebsocket hook
-      if (handleWebsocket && config.websocket?.enabled) {
-        const upgrade = request.headers.get('upgrade');
-        
-        if (upgrade?.toLowerCase() === 'websocket') {
-          // Use the handleWebsocket.upgrade method to determine if we should upgrade
-          if (handleWebsocket.upgrade) {
-            const shouldUpgrade = await handleWebsocket.upgrade(request, (req: Request) => {
-              return server.upgrade(req, {
-                data: { 
-                  path: new URL(req.url).pathname,
-                  handler: handleWebsocket 
-                }
-              });
-            });
-            
-            if (shouldUpgrade) {
-              return; // Successfully upgraded
-            }
-          } else {
-            // Default upgrade behavior - upgrade all WebSocket requests
-            const success = server.upgrade(request, {
-              data: { 
-                path: new URL(request.url).pathname,
-                handler: handleWebsocket 
-              }
-            });
-            
-            if (success) {
-              return; // Successfully upgraded
-            } else {
-              return new Response('WebSocket upgrade failed', { status: 400 });
-            }
-          }
-        }
-      }
-
       // Try static assets
       const staticResponse = await staticHandler(request);
       if (staticResponse) return staticResponse;
@@ -114,8 +64,8 @@ export async function createServer(config: ServerConfig) {
       const prerenderedResponse = await prerenderedHandler(request);
       if (prerenderedResponse) return prerenderedResponse;
 
-      // Fall back to SvelteKit
-      return await svelteKitHandler(request);
+      // Fall back to SvelteKit (handle upgrades via event.platform)
+      return await svelteKitHandler(request, bunServer);
     } catch (error) {
       console.error('Server error:', error);
       return new Response('Internal Server Error', { 
@@ -125,74 +75,18 @@ export async function createServer(config: ServerConfig) {
     }
   }
 
-  // Start the server with WebSocket support
-  const serverOptions: any = {
+  const server_instance = Bun.serve({
     ...listen,
     fetch: handler,
+    ...(websocket ? { websocket } : {}),
     error(error: Error) {
       console.error('Server error:', error);
       return new Response('Internal Server Error', { status: 500 });
     }
-  };
-
-  // Add WebSocket configuration if enabled and we have a handler
-  if (config.websocket?.enabled && handleWebsocket) {
-    serverOptions.websocket = {
-      async message(ws: any, message: string | Buffer) {
-        const wsHandler = ws.data?.handler;
-        if (wsHandler?.message) {
-          try {
-            await wsHandler.message(ws, message);
-          } catch (error) {
-            console.error('WebSocket message error:', error);
-          }
-        }
-      },
-      
-      async open(ws: any) {
-        const wsHandler = ws.data?.handler;
-        if (wsHandler?.open) {
-          try {
-            await wsHandler.open(ws);
-          } catch (error) {
-            console.error('WebSocket open error:', error);
-          }
-        }
-      },
-      
-      async close(ws: any, code?: number, reason?: string) {
-        const wsHandler = ws.data?.handler;
-        if (wsHandler?.close) {
-          try {
-            await wsHandler.close(ws, code, reason);
-          } catch (error) {
-            console.error('WebSocket close error:', error);
-          }
-        }
-      },
-      
-      async drain(ws: any) {
-        const wsHandler = ws.data?.handler;
-        if (wsHandler?.drain) {
-          try {
-            await wsHandler.drain(ws);
-          } catch (error) {
-            console.error('WebSocket drain error:', error);
-          }
-        }
-      },
-      
-      // Bun WebSocket options
-      compression: config.websocket.compression ?? true,
-      maxCompressedSize: config.websocket.maxCompressedSize ?? 64 * 1024,
-      maxBackpressure: config.websocket.maxBackpressure ?? 16 * 1024 * 1024,
-    };
-  }
-
-  const server_instance = Bun.serve(serverOptions);
+  });
 
   console.log(`Server running on ${server_instance.url}`);
-  if (config.websocket?.enabled && handleWebsocket) {
+  if (websocket) {
     console.log('WebSocket support enabled');
   }
 

@@ -4,6 +4,7 @@ import { dirname, join } from "path";
 import glob from "tiny-glob";
 import type { Builder } from "@sveltejs/kit"
 import { externalsFromPackageJson } from "./externals.ts";
+import { patchServerWebsocketSource } from "./websocket-patch.ts";
 
 // Resolve the files directory relative to the adapter's location
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -27,13 +28,6 @@ interface AdapterOptions {
   dynamic_origin?: boolean;
   xff_depth?: number;
   assets?: boolean;
-  websocket?: {
-    enabled?: boolean;
-    path?: string;
-    compression?: boolean;
-    maxCompressedSize?: number;
-    maxBackpressure?: number;
-  };
 }
 
 interface CompressOptions {
@@ -51,7 +45,6 @@ export default function (opts: AdapterOptions = {}) {
     dynamic_origin = false,
     xff_depth = 1,
     assets = true,
-    websocket = { enabled: false, path: '/ws', compression: true },
   } = opts;
   
   return {
@@ -75,6 +68,20 @@ export default function (opts: AdapterOptions = {}) {
 
         builder.log.minor("Building server");
         builder.writeServer(`${out}/server`);
+
+        builder.log.minor("Patching Kit websocket export");
+        const serverFiles = await glob("**/*.js", {
+          cwd: `${out}/server`,
+          absolute: true,
+          filesOnly: true,
+        });
+        for (const file of serverFiles) {
+          const source = await Bun.file(file).text();
+          const patched = patchServerWebsocketSource(source);
+          if (patched !== source) {
+            await Bun.write(file, patched);
+          }
+        }
 
         // Generate manifest file
         await Bun.write(
@@ -109,10 +116,6 @@ export default function (opts: AdapterOptions = {}) {
         
         // Replace configuration values
         entryContent = entryContent.replace(/xff_depth: 1/, `xff_depth: ${xff_depth}`);
-        entryContent = entryContent.replace(
-          /websocket: \{[^}]+\}/,
-          `websocket: ${JSON.stringify(websocket)}`
-        );
         
         await Bun.write(indexPath, entryContent);
 

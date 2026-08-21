@@ -19,3 +19,7 @@ _Avoid_: runtime package, external package
 **Dev dependency**:
 A package listed in `devDependencies`. It is inlined into the server output and is not installed at deploy.
 _Avoid_: bundled package
+
+**Deploy directory**:
+The `out` folder Adapt/bundle writes: server bundle, client/prerendered assets, `package.json` with production dependencies, and `bun.lock` when the app has one.
+_Avoid_: dist, build output (ambiguous with the adapter’s own package build)

@@ -7,6 +7,7 @@ import { clientAddress } from './client-address.ts';
 import { serveAssetsEnabled, xffDepthFromBuild } from './asset.ts';
 import { baseFromBuild, clientAssetRoot, kitRead } from './kit-read.ts';
 import { serveLimits } from './serve-limits.ts';
+import { gracefulShutdown, type ShutdownReason } from './shutdown.ts';
 
 interface ServerConfig {
   manifestPath: string;
@@ -108,11 +109,19 @@ export async function createServer(config: ServerConfig) {
     console.log('WebSocket support enabled');
   }
 
-  // Graceful shutdown
-  const shutdown = (signal: string) => {
-    console.log(`\nReceived ${signal}, shutting down gracefully...`);
-    server_instance.stop();
-    process.exit(0);
+  const shutdown = (reason: ShutdownReason) => {
+    console.log(`\nReceived ${reason}, shutting down gracefully...`);
+    return gracefulShutdown(
+      {
+        emit(event, value) {
+          // @ts-expect-error sveltekit:shutdown is a Kit custom process event
+          process.emit(event, value);
+        },
+        stop: (closeActive) => server_instance.stop(closeActive),
+        exit: (code) => process.exit(code),
+      },
+      reason,
+    );
   };
 
   process.on('SIGTERM', () => shutdown('SIGTERM'));

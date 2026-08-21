@@ -63,3 +63,7 @@ _Avoid_: no init.read, Node createReadableStream
 **Kit instrumentation**:
 `supports.instrumentation` is true. After Bun.build, if the app has `instrumentation.server.js`, copy it next to the entry and `builder.instrument` wraps `index.js` so that file runs first.
 _Avoid_: live exports on the Bun entry, Kit 3 Adapter.vite
+
+**sveltekit:shutdown**:
+On `SIGINT` / `SIGTERM`, emit `process` `sveltekit:shutdown` with that reason, then `Bun.serve.stop(true)`, then `exit(0)`, so apps can flush work.
+_Avoid_: process-idle IDLE reason (adapter-node systemd)

@@ -23,3 +23,11 @@ _Avoid_: bundled package
 **Deploy directory**:
 The `out` folder Adapt/bundle writes: server bundle, client/prerendered assets, `package.json` with production dependencies, and `bun.lock` when the app has one.
 _Avoid_: dist, build output (ambiguous with the adapter’s own package build)
+
+**Deploy env**:
+The listen and origin names Adapt/bundle’s runtime reads: `HOST`, `PORT`, `SOCKET_PATH`, `ORIGIN`, and the forwarded-header names. `envPrefix` applies only to these names.
+_Avoid_: $env, PUBLIC_ vars, app env
+
+**Listen options**:
+What `listenFromEnv` returns for `Bun.serve`: a Unix socket, or optional `hostname` / `port`. With no prefix, `port` is omitted so Bun reads `PORT` / `BUN_PORT` / `NODE_PORT`.
+_Avoid_: server options, bind config

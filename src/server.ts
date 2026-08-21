@@ -5,6 +5,7 @@ import { getRequest, setResponse } from './platform.ts';
 import { kitPlatform, websocketFromKitServer } from './websocket.ts';
 import { clientAddress } from './client-address.ts';
 import { serveAssetsEnabled } from './asset.ts';
+import { serveLimits } from './serve-limits.ts';
 
 interface ServerConfig {
   manifestPath: string;
@@ -31,6 +32,10 @@ export async function createServer(config: ServerConfig) {
   const host_header = (env('HOST_HEADER', 'host') ?? 'host').toLowerCase();
   const port_header = (env('PORT_HEADER', '') ?? '').toLowerCase();
   const xff_depth = Number.parseInt(env('XFF_DEPTH', config.xff_depth), 10);
+  const limits = serveLimits({
+    BODY_SIZE_LIMIT: env("BODY_SIZE_LIMIT", "512K"),
+    IDLE_TIMEOUT: env("IDLE_TIMEOUT", "10"),
+  });
 
   const buildOptions = typeof BUILD_OPTIONS === "undefined" ? {} : BUILD_OPTIONS;
   const staticHandler = serveAssetsEnabled(buildOptions) ? createStaticHandler() : async () => null;
@@ -85,6 +90,7 @@ export async function createServer(config: ServerConfig) {
 
   const server_instance = Bun.serve({
     ...listen,
+    ...limits,
     fetch: handler,
     ...(websocket ? { websocket } : {}),
     error(error: Error) {

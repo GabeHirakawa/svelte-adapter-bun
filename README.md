@@ -140,6 +140,14 @@ With no prefix, `PORT` is omitted from `Bun.serve` so Bun 1.4 can read `PORT`, `
 ADDRESS_HEADER=X-Forwarded-For XFF_DEPTH=2 bun ./build/index.js
 ```
 
+`BODY_SIZE_LIMIT` caps the request body (`512K` default; suffixes `K` / `M` / `G`). `Infinity`, `0`, or `none` disables the cap (adapter-node’s documented off switch — gornostay rejects `Infinity`).
+
+`IDLE_TIMEOUT` is Bun’s **per-connection** idle timeout in seconds (`10` default, range `0`–`255`). Values outside that range fail at boot instead of crashing `Bun.serve`. This is not adapter-node’s process idle-shutdown timer.
+
+```
+BODY_SIZE_LIMIT=2M IDLE_TIMEOUT=30 bun ./build/index.js
+```
+
 ## Building and Running
 
 After building your app:
@@ -227,8 +235,10 @@ Intentional differences:
 | Client address | One policy: `ADDRESS_HEADER` (XFF from the right by `XFF_DEPTH`) or `Bun.Server.requestIP`. The incoming `X-Forwarded-For` header is not rewritten. Bad `XFF_DEPTH` / a missing address header fail the request | The previous split (rewrite-from-the-right, then read left-most, else `127.0.0.1`) was two policies and hid the real peer |
 | `xff_depth` option | Still accepted; used only when `XFF_DEPTH` is unset | Deploy env is the runtime source of truth, matching the rest of deploy env |
 | Assets | `assets` (not `serveAssets`). `Bun.file` plus `.br` / `.gz` negotiation, not sirv | Avoid a Node static-server dependency; precompress already wrote the siblings |
+| `BODY_SIZE_LIMIT` | `Infinity` / `0` / `none` disable the cap | adapter-node’s documented off switch; gornostay rejects `Infinity` at boot |
+| `IDLE_TIMEOUT` | Must be `0`–`255` (Bun per-connection idle). Out-of-range values throw a clear error | Bun will crash on `256+`. This is not adapter-node’s process idle-shutdown |
 
-Not ported yet: `BODY_SIZE_LIMIT` / `IDLE_TIMEOUT` on `Bun.serve`, and HTTP range requests.
+Not ported yet: HTTP range requests.
 
 ## License
 

@@ -4,36 +4,20 @@ import { dirname, join } from "path";
 import glob from "tiny-glob";
 import type { Builder } from "@sveltejs/kit"
 import { externalsFromPackageJson } from "./externals.ts";
+import { patchServerWebsocketSource } from "./websocket-patch.ts";
+import { maybeInstrument } from "./instrument.ts";
+import { adaptTempDir } from "./adapt-dir.ts";
+import { runtimeFilesDir } from "./runtime-files.ts";
 
-// Resolve the files directory relative to the adapter's location
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
-// Check if we're running from source (development) or dist (production)
-let files = join(__dirname, "files");
-if (!existsSync(files)) {
-  // Try dist/files (when running from source)
-  files = join(__dirname, "dist", "files");
-  if (!existsSync(files)) {
-    // Try src directory (when running from source without build)
-    files = join(__dirname, "src");
-  }
-}
+const files = runtimeFilesDir(__dirname);
 
 interface AdapterOptions {
   out?: string;
   precompress?: boolean | CompressOptions;
   envPrefix?: string;
-  development?: boolean;
-  dynamic_origin?: boolean;
   xff_depth?: number;
   assets?: boolean;
-  websocket?: {
-    enabled?: boolean;
-    path?: string;
-    compression?: boolean;
-    maxCompressedSize?: number;
-    maxBackpressure?: number;
-  };
 }
 
 interface CompressOptions {
@@ -47,15 +31,16 @@ export default function (opts: AdapterOptions = {}) {
     out = "build",
     precompress = false,
     envPrefix = "",
-    development = false,
-    dynamic_origin = false,
     xff_depth = 1,
     assets = true,
-    websocket = { enabled: false, path: '/ws', compression: true },
   } = opts;
   
   return {
     name: "svelte-adapter-bun",
+    supports: {
+      read: () => true,
+      instrumentation: () => true,
+    },
     async adapt(builder: Builder) {
       try {
         builder.rimraf(out);
@@ -76,6 +61,20 @@ export default function (opts: AdapterOptions = {}) {
         builder.log.minor("Building server");
         builder.writeServer(`${out}/server`);
 
+        builder.log.minor("Patching Kit websocket export");
+        const serverFiles = await glob("**/*.js", {
+          cwd: `${out}/server`,
+          absolute: true,
+          filesOnly: true,
+        });
+        for (const file of serverFiles) {
+          const source = await Bun.file(file).text();
+          const patched = patchServerWebsocketSource(source);
+          if (patched !== source) {
+            await Bun.write(file, patched);
+          }
+        }
+
         // Generate manifest file
         await Bun.write(
           `${out}/manifest.js`,
@@ -88,8 +87,7 @@ export default function (opts: AdapterOptions = {}) {
 
         builder.log.minor(`Bundling with production dependencies external`);
 
-        // Use SvelteKit's recommended intermediate directory
-        const tempDir = ".svelte-kit/svelte-adapter-bun";
+        const tempDir = adaptTempDir(builder);
         builder.rimraf(tempDir);
         builder.mkdirp(tempDir);
 
@@ -100,21 +98,7 @@ export default function (opts: AdapterOptions = {}) {
           throw new Error(`Runtime files directory not found: ${files}`);
         }
         
-        // Generate the main entry file with configuration
-        builder.log.minor("Generating server entry file");
-        
-        // Read the base index file
         const indexPath = join(tempDir, "index.ts");
-        let entryContent = await Bun.file(indexPath).text();
-        
-        // Replace configuration values
-        entryContent = entryContent.replace(/xff_depth: 1/, `xff_depth: ${xff_depth}`);
-        entryContent = entryContent.replace(
-          /websocket: \{[^}]+\}/,
-          `websocket: ${JSON.stringify(websocket)}`
-        );
-        
-        await Bun.write(indexPath, entryContent);
 
         // Bundle the server keeping production dependencies external
         builder.log.minor("Bundling server with dependencies");
@@ -130,6 +114,11 @@ export default function (opts: AdapterOptions = {}) {
           external: externalsFromPackageJson(pkg),
           define: {
             ENV_PREFIX: JSON.stringify(envPrefix),
+            BUILD_OPTIONS: JSON.stringify({
+              assets,
+              xff_depth,
+              base: builder.config.kit.paths.base ?? "",
+            }),
           },
           naming: {
             entry: "index.js",
@@ -145,6 +134,8 @@ export default function (opts: AdapterOptions = {}) {
           }
           throw new Error('Bundle failed');
         }
+
+        await maybeInstrument(builder, out);
 
         // Clean up intermediate directory
         builder.rimraf(tempDir);

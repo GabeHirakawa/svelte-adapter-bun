@@ -1,57 +1,54 @@
-import { fileURLToPath } from 'url';
-import path from 'path';
-import { existsSync } from 'fs';
-import type { Handler } from './types.ts';
+import path from "path";
+import { existsSync } from "fs";
+import type { Handler } from "./types.ts";
+import { pickCompressedSibling } from "./asset.ts";
+import { fileRangeResponse } from "./range.ts";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+function prerenderedFile(root: string, pathname: string): string | null {
+  if (pathname === "/") {
+    return path.join(root, "index.html");
+  }
 
-/**
- * Create prerendered page handler
- */
-export function createPrerenderedHandler(prerendered: Set<string>): Handler {
+  if (pathname.endsWith("/")) {
+    const dirPath = path.join(root, pathname, "index.html");
+    const filePath = path.join(root, `${pathname.slice(0, -1)}.html`);
+    return existsSync(dirPath) ? dirPath : existsSync(filePath) ? filePath : null;
+  }
+
+  const filePath = path.join(root, `${pathname}.html`);
+  const dirPath = path.join(root, pathname, "index.html");
+  return existsSync(filePath) ? filePath : existsSync(dirPath) ? dirPath : null;
+}
+
+export function createPrerenderedHandler(
+  prerendered: Set<string>,
+  prerenderedRoot = path.join(import.meta.dir, "prerendered"),
+): Handler {
   return async function prerenderedHandler(request: Request): Promise<Response | null> {
     const url = new URL(request.url);
-    
-    // Only handle prerendered routes
     if (!prerendered.has(url.pathname)) {
-      return null; // Not a prerendered route
+      return null;
     }
-    
-    let prerenderedPath: string;
-    
-    if (url.pathname === '/') {
-      prerenderedPath = path.join(__dirname, 'prerendered', 'index.html');
-    } else if (url.pathname.endsWith('/')) {
-      // For paths ending with /, try both directory/index.html and path.html
-      const dirPath = path.join(__dirname, 'prerendered', url.pathname, 'index.html');
-      const filePath = path.join(__dirname, 'prerendered', url.pathname.slice(0, -1) + '.html');
-      prerenderedPath = existsSync(dirPath) ? dirPath : filePath;
-    } else {
-      // For paths without trailing slash, try both path.html and path/index.html
-      const filePath = path.join(__dirname, 'prerendered', url.pathname + '.html');
-      const dirPath = path.join(__dirname, 'prerendered', url.pathname, 'index.html');
-      prerenderedPath = existsSync(filePath) ? filePath : dirPath;
+
+    const htmlPath = prerenderedFile(prerenderedRoot, url.pathname);
+    if (!htmlPath) {
+      return null;
     }
-    
-    if (!existsSync(prerenderedPath)) {
-      console.warn(`Prerendered file not found: ${prerenderedPath} for route ${url.pathname}`);
-      return null; // Let SvelteKit handle it
+
+    const picked = pickCompressedSibling(
+      htmlPath,
+      request.headers.get("accept-encoding") ?? undefined,
+      existsSync,
+    );
+    const headers: Record<string, string> = {
+      "content-type": "text/html",
+      "cache-control": "public, max-age=3600",
+    };
+    if (picked.encoding) {
+      headers["content-encoding"] = picked.encoding;
+      headers["vary"] = "accept-encoding";
     }
-    
-    try {
-      const file = Bun.file(prerenderedPath);
-      const content = await file.arrayBuffer();
-      
-      return new Response(content, {
-        headers: {
-          'content-type': 'text/html',
-          'cache-control': 'public, max-age=3600'
-        }
-      });
-      
-    } catch (error) {
-      console.error('Error serving prerendered page:', prerenderedPath, error);
-      return null; // Let SvelteKit handle it
-    }
+
+    return fileRangeResponse(picked.path, request, headers);
   };
-} 
+}

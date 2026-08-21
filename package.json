@@ -6,12 +6,13 @@
   "author": "Gabriel Hirakawa",
   "homepage": "https://github.com/gabehirakawa/svelte-adapter-bun",
   "devDependencies": {
-    "@sveltejs/kit": "^2.21.1",
+    "@sveltejs/kit": "^2.70.3",
     "@types/bun": "latest",
     "bun-types": "^1.2.14",
     "tiny-glob": "^0.2.9"
   },
   "peerDependencies": {
+    "@sveltejs/kit": "^2.31.0",
     "typescript": "^5"
   },
   "exports": {

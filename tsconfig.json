@@ -27,6 +27,7 @@
   "include": [
     "index.ts",
     "externals.ts",
+    "websocket-patch.ts",
     "build.ts",
     "src/**/*",
     "types.d.ts"

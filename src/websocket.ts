@@ -1,32 +1,47 @@
 /**
- * WebSocket types for SvelteKit hooks.server.js
- * 
+ * WebSocket types for SvelteKit hooks.server
+ *
  * @example
- * ```js
- * // hooks.server.js
- * 
- * /** @type {import("@gkh/svelte-adapter-bun").WebSocketHandler} *\/
- * export const handleWebsocket = {
+ * ```ts
+ * // hooks.server.ts
+ * export const handle: Handle = async ({ event, resolve }) => {
+ *   if (
+ *     event.request.headers.get("upgrade")?.toLowerCase() === "websocket"
+ *   ) {
+ *     await event.platform.server.upgrade(event.platform.request);
+ *     return new Response(null, { status: 101 });
+ *   }
+ *   return resolve(event);
+ * };
+ *
+ * export const websocket: Bun.WebSocketHandler = {
  *   open(ws) {
- *     console.log("WebSocket opened");
  *     ws.send("Hello from SvelteKit + Bun!");
  *   },
- *   
  *   message(ws, message) {
- *     console.log("Received:", message);
- *     ws.send(`Echo: ${message}`);
+ *     ws.send(message);
  *   },
- *   
- *   upgrade(request, upgrade) {
- *     const url = new URL(request.url);
- *     if (url.pathname.startsWith("/ws")) {
- *       return upgrade(request);
- *     }
- *     return false;
- *   }
  * };
  * ```
  */
 
-// Export types from the source files
-export type { WebSocketHandler, WebSocketConfig } from './types.ts'; 
+export type { WebSocketHandler } from "./types.ts";
+
+export type KitPlatform = {
+  server: Bun.Server;
+  request: Request;
+};
+
+export type KitServerWithWebsocket = {
+  websocket?: () => unknown;
+};
+
+export function kitPlatform(server: Bun.Server, request: Request): KitPlatform {
+  return { server, request };
+}
+
+export function websocketFromKitServer(
+  server: KitServerWithWebsocket,
+): Bun.WebSocketHandler | undefined {
+  return (server.websocket?.() ?? undefined) as Bun.WebSocketHandler | undefined;
+}

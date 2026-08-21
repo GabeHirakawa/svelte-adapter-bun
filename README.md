@@ -43,7 +43,7 @@ export default {
 | `envPrefix` | `string` | `''` | Prefix for deploy env (`HOST`, `PORT`, `SOCKET_PATH`, `ORIGIN`, forwarded-header names) |
 | `development` | `boolean` | `false` | Enable development mode (disables minification) |
 | `dynamic_origin` | `boolean` | `false` | Enable dynamic origin support |
-| `xff_depth` | `number` | `1` | X-Forwarded-For depth for trusted proxies |
+| `xff_depth` | `number` | `1` | Fallback `XFF_DEPTH` when the deploy env is unset |
 | `assets` | `boolean` | `true` | Serve static assets |
 
 ### Compression Options
@@ -131,6 +131,12 @@ MY_HOST=127.0.0.1 MY_PORT=4000 MY_ORIGIN=https://my.site bun ./build/index.js
 ```
 
 With no prefix, `PORT` is omitted from `Bun.serve` so Bun 1.4 can read `PORT`, `BUN_PORT`, or `NODE_PORT`. Set `SOCKET_PATH` to listen on a Unix socket instead.
+
+`ADDRESS_HEADER` and `XFF_DEPTH` control `event.getClientAddress()`. With no `ADDRESS_HEADER`, the adapter uses `Bun.Server.requestIP`. When `ADDRESS_HEADER` is `X-Forwarded-For`, the address is read from the **right** by `XFF_DEPTH` (trusted proxies). The request’s `X-Forwarded-For` header is not rewritten.
+
+```
+ADDRESS_HEADER=X-Forwarded-For XFF_DEPTH=2 bun ./build/index.js
+```
 
 ## Building and Running
 

@@ -3,6 +3,7 @@ import { createStaticHandler } from './static.ts';
 import { createPrerenderedHandler } from './prerendered.ts';
 import { getRequest, setResponse } from './platform.ts';
 import { kitPlatform, websocketFromKitServer } from './websocket.ts';
+import { clientAddress } from './client-address.ts';
 
 interface ServerConfig {
   manifestPath: string;
@@ -28,6 +29,7 @@ export async function createServer(config: ServerConfig) {
   const protocol_header = (env('PROTOCOL_HEADER', '') ?? '').toLowerCase();
   const host_header = (env('HOST_HEADER', 'host') ?? 'host').toLowerCase();
   const port_header = (env('PORT_HEADER', '') ?? '').toLowerCase();
+  const xff_depth = Number.parseInt(env('XFF_DEPTH', config.xff_depth), 10);
 
   // Create handlers
   const staticHandler = createStaticHandler();
@@ -37,8 +39,6 @@ export async function createServer(config: ServerConfig) {
     const svelteRequest = await getRequest({
       request,
       origin,
-      xff_depth: config.xff_depth,
-      address_header,
       protocol_header,
       host_header,
       port_header
@@ -46,7 +46,12 @@ export async function createServer(config: ServerConfig) {
     
     const response = await server.respond(svelteRequest, {
       getClientAddress() {
-        return svelteRequest.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || '127.0.0.1';
+        return clientAddress({
+          request,
+          addressHeader: address_header,
+          xffDepth: xff_depth,
+          requestIP: bunServer.requestIP(request)?.address,
+        });
       },
       platform: kitPlatform(bunServer, request)
     });

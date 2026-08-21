@@ -3,8 +3,6 @@
 export interface RequestOptions {
   request: Request;
   origin?: string;
-  xff_depth: number;
-  address_header?: string;
   protocol_header?: string;
   host_header?: string;
   port_header?: string;

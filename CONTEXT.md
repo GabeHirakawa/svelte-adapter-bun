@@ -39,3 +39,7 @@ _Avoid_: handleWebsocket, adapter websocket option
 **Kit platform**:
 `event.platform` is `{ server, request }` so `handle` can call `event.platform.server.upgrade(event.platform.request)`.
 _Avoid_: isBun, upgrade callback
+
+**Client address**:
+What `getClientAddress` returns for SvelteKit. If `ADDRESS_HEADER` is set, read that header (for `x-forwarded-for`, from the right by `XFF_DEPTH`). If it is unset, use `Bun.Server.requestIP`. Do not rewrite the request’s `X-Forwarded-For`.
+_Avoid_: left-most XFF, 127.0.0.1 fallback

@@ -23,8 +23,6 @@ function supportsDuplexProperty(): boolean {
 export async function getRequest({
   request,
   origin,
-  xff_depth,
-  address_header,
   protocol_header,
   host_header,
   port_header
@@ -62,20 +60,7 @@ export async function getRequest({
   }
   
   const headers = new Headers(request.headers);
-  
-  if (address_header) {
-    const address = request.headers.get(address_header);
-    if (address) {
-      if (address_header === 'x-forwarded-for') {
-        const addresses = address.split(',').map(addr => addr.trim());
-        const clientAddress = addresses[Math.max(0, addresses.length - xff_depth)] || addresses[0] || '';
-        headers.set('x-forwarded-for', clientAddress);
-      } else {
-        headers.set('x-forwarded-for', address);
-      }
-    }
-  }
-  
+
   const requestInit: RequestInit = {
     method: request.method,
     headers,

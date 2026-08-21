@@ -5,6 +5,7 @@ import glob from "tiny-glob";
 import type { Builder } from "@sveltejs/kit"
 import { externalsFromPackageJson } from "./externals.ts";
 import { patchServerWebsocketSource } from "./websocket-patch.ts";
+import { maybeInstrument } from "./instrument.ts";
 
 // Resolve the files directory relative to the adapter's location
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -47,6 +48,7 @@ export default function (opts: AdapterOptions = {}) {
     name: "svelte-adapter-bun",
     supports: {
       read: () => true,
+      instrumentation: () => true,
     },
     async adapt(builder: Builder) {
       try {
@@ -142,6 +144,8 @@ export default function (opts: AdapterOptions = {}) {
           }
           throw new Error('Bundle failed');
         }
+
+        await maybeInstrument(builder, out);
 
         // Clean up intermediate directory
         builder.rimraf(tempDir);

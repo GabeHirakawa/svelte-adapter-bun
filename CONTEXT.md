@@ -59,3 +59,7 @@ _Avoid_: request.url as-is, default http
 **Kit read**:
 `supports.read` is true. `Server.init` gets `read` that streams a file under `client` + `paths.base` via `Bun.file`, using the same path-traversal rule as serve assets.
 _Avoid_: no init.read, Node createReadableStream
+
+**Kit instrumentation**:
+`supports.instrumentation` is true. After Bun.build, if the app has `instrumentation.server.js`, copy it next to the entry and `builder.instrument` wraps `index.js` so that file runs first.
+_Avoid_: live exports on the Bun entry, Kit 3 Adapter.vite

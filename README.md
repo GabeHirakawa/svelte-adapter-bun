@@ -142,6 +142,8 @@ The public origin for `event.url` is `ORIGIN` if set. Otherwise it is `PROTOCOL_
 
 `read` from `$app/server` works. The adapter claims `supports.read` and `Server.init` streams files from `client/` (plus Kit `paths.base`) via `Bun.file`.
 
+`src/instrumentation.server.ts` is supported when you opt into `kit.experimental.instrumentation.server`. The adapter copies that file next to the Bun entry and wraps `index.js` so instrumentation loads first. The entry has no live exports.
+
 `BODY_SIZE_LIMIT` caps the request body (`512K` default; suffixes `K` / `M` / `G`). `Infinity`, `0`, or `none` disables the cap (adapter-node’s documented off switch — gornostay rejects `Infinity`).
 
 `IDLE_TIMEOUT` is Bun’s **per-connection** idle timeout in seconds (`10` default, range `0`–`255`). Values outside that range fail at boot instead of crashing `Bun.serve`. This is not adapter-node’s process idle-shutdown timer.

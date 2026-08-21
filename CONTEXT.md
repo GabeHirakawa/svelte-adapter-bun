@@ -5,8 +5,8 @@ A SvelteKit adapter that emits a Bun deploy directory. Runtime contracts follow 
 ## Language
 
 **Adapt/bundle**:
-The module that turns SvelteKit builder output into a Bun deploy directory. Dep split and Bun.build only — not runtime tokens.
-_Avoid_: rolldown path, smart bundling, build wrapper
+The module that turns SvelteKit builder output into a Bun deploy directory. Dep split and Bun.build. Adapter options reach the runtime through `define` (`ENV_PREFIX`, `BUILD_OPTIONS`), not string replace on the entry file.
+_Avoid_: rolldown path, smart bundling, regex tokens
 
 **Dep split**:
 The adapter-node rule: production dependencies stay external, including deep exports (`pkg/subpath`); everything else is bundled into the server output.

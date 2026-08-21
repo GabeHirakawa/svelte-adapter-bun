@@ -3,6 +3,7 @@ import {
   pickCompressedSibling,
   resolveSafePath,
   serveAssetsEnabled,
+  xffDepthFromBuild,
 } from "./src/asset.ts";
 
 describe("serveAssetsEnabled", () => {
@@ -13,6 +14,17 @@ describe("serveAssetsEnabled", () => {
 
   test("is off when assets is false", () => {
     expect(serveAssetsEnabled({ assets: false })).toBe(false);
+  });
+});
+
+describe("xffDepthFromBuild", () => {
+  test("uses BUILD_OPTIONS.xff_depth when it is a finite number", () => {
+    expect(xffDepthFromBuild({ xff_depth: 3 })).toBe(3);
+  });
+
+  test("falls back to 1 when BUILD_OPTIONS has no xff_depth", () => {
+    expect(xffDepthFromBuild(undefined)).toBe(1);
+    expect(xffDepthFromBuild({})).toBe(1);
   });
 });
 

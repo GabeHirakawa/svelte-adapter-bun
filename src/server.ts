@@ -4,13 +4,12 @@ import { createPrerenderedHandler } from './prerendered.ts';
 import { getRequest, setResponse } from './platform.ts';
 import { kitPlatform, websocketFromKitServer } from './websocket.ts';
 import { clientAddress } from './client-address.ts';
-import { serveAssetsEnabled } from './asset.ts';
+import { serveAssetsEnabled, xffDepthFromBuild } from './asset.ts';
 import { serveLimits } from './serve-limits.ts';
 
 interface ServerConfig {
   manifestPath: string;
   prerenderedPaths: string[];
-  xff_depth: number;
 }
 
 export async function createServer(config: ServerConfig) {
@@ -31,13 +30,12 @@ export async function createServer(config: ServerConfig) {
   const protocol_header = (env('PROTOCOL_HEADER', '') ?? '').toLowerCase();
   const host_header = (env('HOST_HEADER', 'host') ?? 'host').toLowerCase();
   const port_header = (env('PORT_HEADER', '') ?? '').toLowerCase();
-  const xff_depth = Number.parseInt(env('XFF_DEPTH', config.xff_depth), 10);
+  const buildOptions = typeof BUILD_OPTIONS === "undefined" ? {} : BUILD_OPTIONS;
+  const xff_depth = Number.parseInt(env("XFF_DEPTH", xffDepthFromBuild(buildOptions)), 10);
   const limits = serveLimits({
     BODY_SIZE_LIMIT: env("BODY_SIZE_LIMIT", "512K"),
     IDLE_TIMEOUT: env("IDLE_TIMEOUT", "10"),
   });
-
-  const buildOptions = typeof BUILD_OPTIONS === "undefined" ? {} : BUILD_OPTIONS;
   const staticHandler = serveAssetsEnabled(buildOptions) ? createStaticHandler() : async () => null;
   const prerenderedHandler = serveAssetsEnabled(buildOptions)
     ? createPrerenderedHandler(prerendered)

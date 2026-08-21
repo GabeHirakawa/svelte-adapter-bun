@@ -2,6 +2,7 @@ import path from "path";
 
 export type BuildOptions = {
   assets?: boolean;
+  xff_depth?: number;
 };
 
 export type CompressedPick = {
@@ -11,6 +12,12 @@ export type CompressedPick = {
 
 export function serveAssetsEnabled(options?: BuildOptions): boolean {
   return options?.assets !== false;
+}
+
+export function xffDepthFromBuild(options?: BuildOptions, fallback = 1): number {
+  return typeof options?.xff_depth === "number" && Number.isFinite(options.xff_depth)
+    ? options.xff_depth
+    : fallback;
 }
 
 export function resolveSafePath(root: string, pathname: string): string | null {

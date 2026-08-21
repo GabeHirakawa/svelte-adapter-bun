@@ -107,17 +107,7 @@ export default function (opts: AdapterOptions = {}) {
           throw new Error(`Runtime files directory not found: ${files}`);
         }
         
-        // Generate the main entry file with configuration
-        builder.log.minor("Generating server entry file");
-        
-        // Read the base index file
         const indexPath = join(tempDir, "index.ts");
-        let entryContent = await Bun.file(indexPath).text();
-        
-        // Replace configuration values
-        entryContent = entryContent.replace(/xff_depth: 1/, `xff_depth: ${xff_depth}`);
-        
-        await Bun.write(indexPath, entryContent);
 
         // Bundle the server keeping production dependencies external
         builder.log.minor("Bundling server with dependencies");
@@ -133,7 +123,7 @@ export default function (opts: AdapterOptions = {}) {
           external: externalsFromPackageJson(pkg),
           define: {
             ENV_PREFIX: JSON.stringify(envPrefix),
-            BUILD_OPTIONS: JSON.stringify({ assets }),
+            BUILD_OPTIONS: JSON.stringify({ assets, xff_depth }),
           },
           naming: {
             entry: "index.js",

@@ -41,8 +41,6 @@ export default {
 | `out` | `string` | `'build'` | The directory to write the built files to |
 | `precompress` | `boolean \| CompressOptions` | `false` | Write `.gz` / `.br` siblings next to client and prerendered files |
 | `envPrefix` | `string` | `''` | Prefix for deploy env (`HOST`, `PORT`, `SOCKET_PATH`, `ORIGIN`, forwarded-header names) |
-| `development` | `boolean` | `false` | Enable development mode (disables minification) |
-| `dynamic_origin` | `boolean` | `false` | Enable dynamic origin support |
 | `xff_depth` | `number` | `1` | Fallback `XFF_DEPTH` when the deploy env is unset |
 | `assets` | `boolean` | `true` | Serve `client/` and `prerendered/` (including precompressed siblings). Set `false` to let a CDN / SvelteKit handle them |
 
@@ -181,7 +179,6 @@ The build output is optimized for production:
 - All dev dependencies are bundled into the server code
 - Only production dependencies need to be installed
 - Static assets are precompressed (if enabled)
-- Server code is minified (unless in development mode)
 
 ## Docker Example
 
@@ -242,6 +239,7 @@ Intentional differences:
 | `BODY_SIZE_LIMIT` | `Infinity` / `0` / `none` disable the cap | adapter-node’s documented off switch; gornostay rejects `Infinity` at boot |
 | `IDLE_TIMEOUT` | Must be `0`–`255` (Bun per-connection idle). Out-of-range values throw a clear error | Bun will crash on `256+`. This is not adapter-node’s process idle-shutdown |
 | Request origin | `ORIGIN`, or forwarded headers with protocol default `https`. Empty `HOST_HEADER` means use `Host`. `PORT_HEADER` is not appended when the host already has a port | Same shape as gornostay. Default `https` keeps CSRF working behind TLS-terminating proxies (`request.url` on Bun.serve is usually `http`) |
+| `development` / `dynamic_origin` | Not accepted | Leftover from old gornostay. Current gornostay dropped them. Origin is always `ORIGIN` or forwarded headers; we do not minify the Bun entry |
 
 Not ported yet: multipart byte ranges.
 

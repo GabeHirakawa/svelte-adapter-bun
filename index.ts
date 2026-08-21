@@ -24,8 +24,6 @@ interface AdapterOptions {
   out?: string;
   precompress?: boolean | CompressOptions;
   envPrefix?: string;
-  development?: boolean;
-  dynamic_origin?: boolean;
   xff_depth?: number;
   assets?: boolean;
 }
@@ -41,8 +39,6 @@ export default function (opts: AdapterOptions = {}) {
     out = "build",
     precompress = false,
     envPrefix = "",
-    development = false,
-    dynamic_origin = false,
     xff_depth = 1,
     assets = true,
   } = opts;

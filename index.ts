@@ -7,20 +7,10 @@ import { externalsFromPackageJson } from "./externals.ts";
 import { patchServerWebsocketSource } from "./websocket-patch.ts";
 import { maybeInstrument } from "./instrument.ts";
 import { adaptTempDir } from "./adapt-dir.ts";
+import { runtimeFilesDir } from "./runtime-files.ts";
 
-// Resolve the files directory relative to the adapter's location
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
-// Check if we're running from source (development) or dist (production)
-let files = join(__dirname, "files");
-if (!existsSync(files)) {
-  // Try dist/files (when running from source)
-  files = join(__dirname, "dist", "files");
-  if (!existsSync(files)) {
-    // Try src directory (when running from source without build)
-    files = join(__dirname, "src");
-  }
-}
+const files = runtimeFilesDir(__dirname);
 
 interface AdapterOptions {
   out?: string;

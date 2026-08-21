@@ -6,6 +6,7 @@ A SvelteKit adapter that emits a Bun deploy directory. Runtime contracts follow 
 
 **Adapt/bundle**:
 The module that turns SvelteKit builder output into a Bun deploy directory. Dep split and Bun.build. Adapter options reach the runtime through `define` (`ENV_PREFIX`, `BUILD_OPTIONS`), not string replace on the entry file. Intermediate files go in `builder.getBuildDirectory("adapter-bun")`. Targets SvelteKit 2.31+ (developed on 2.70); not Kit 3.
+Runtime files for the deploy entry come from `files`, then `dist/files`, then `src` next to the adapter module.
 _Avoid_: rolldown path, smart bundling, regex tokens, Kit 3 Adapter.vite, hardcoded `.svelte-kit/svelte-adapter-bun`
 
 **Dep split**:

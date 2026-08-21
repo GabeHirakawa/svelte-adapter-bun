@@ -39,6 +39,7 @@
   "scripts": {
     "build": "bun run build.ts",
     "dev": "bun run index.ts",
+    "test": "bun test",
     "prepublishOnly": "bun run build"
   },
   "type": "module"

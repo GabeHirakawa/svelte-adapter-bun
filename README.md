@@ -211,7 +211,21 @@ While maintaining API compatibility with `@sveltejs/adapter-node`, this adapter:
 1. Install the adapter: `bun add -D svelte-adapter-bun`
 2. Update `svelte.config.js` to use the new adapter
 3. Replace `npm/yarn` commands with `bun` equivalents
-4. Enjoy the performance boost! ��
+
+## Migrating from gornostay25/svelte-adapter-bun
+
+Public runtime shape is the same: deploy env names (`HOST`, `PORT`, `SOCKET_PATH`, `ORIGIN`, forwarded-header names), `export const websocket` plus `event.platform.server.upgrade(event.platform.request)`, and `ADDRESS_HEADER` / `XFF_DEPTH` for `event.getClientAddress()`.
+
+Intentional differences:
+
+| Topic | This adapter | Why |
+|--------|----------------|-----|
+| Adapt/bundle | `Bun.build` + adapter-node dep split (`dependencies` external, `devDependencies` bundled) | Rolldown inside `adapt()` is out of scope; it caused `lifecycle_outside_component` in apps using this adapter |
+| Listen | With no `envPrefix`, `port` is omitted so Bun 1.4 can read `PORT` / `BUN_PORT` / `NODE_PORT` | Passing `port: 3000` always shadows those vars |
+| Client address | One policy: `ADDRESS_HEADER` (XFF from the right by `XFF_DEPTH`) or `Bun.Server.requestIP`. The incoming `X-Forwarded-For` header is not rewritten. Bad `XFF_DEPTH` / a missing address header fail the request | The previous split (rewrite-from-the-right, then read left-most, else `127.0.0.1`) was two policies and hid the real peer |
+| `xff_depth` option | Still accepted; used only when `XFF_DEPTH` is unset | Deploy env is the runtime source of truth, matching the rest of deploy env |
+
+Not ported yet: `BODY_SIZE_LIMIT` / `IDLE_TIMEOUT` on `Bun.serve`, and gornostay’s `serveAssets` / sirv path.
 
 ## License
 

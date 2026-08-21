@@ -1,6 +1,6 @@
 # svelte-adapter-bun
 
-A SvelteKit adapter that emits a Bun deploy directory. Runtime contracts follow current gornostay25/svelte-adapter-bun. The build contract follows adapter-node’s dep split, implemented with Bun.build.
+A SvelteKit adapter that emits a Bun deploy directory. Runtime contracts follow the **shape** of current gornostay25/svelte-adapter-bun (deploy env names, `export const websocket`, `{ server, request }` platform). Intentional divergences are listed under “Migrating from gornostay25/svelte-adapter-bun” in the README. The build contract follows adapter-node’s dep split, implemented with Bun.build.
 
 ## Language
 

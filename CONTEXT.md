@@ -5,7 +5,7 @@ A SvelteKit adapter that emits a Bun deploy directory. Runtime contracts follow 
 ## Language
 
 **Adapt/bundle**:
-The module that turns SvelteKit builder output into a Bun deploy directory: dep split, Bun.build, deploy package.json, and the config tokens the runtime reads.
+The module that turns SvelteKit builder output into a Bun deploy directory. This pass is only Bun.build plus the dep split — not runtime tokens, hosts, or WebSocket.
 _Avoid_: rolldown path, smart bundling, build wrapper
 
 **Dep split**:

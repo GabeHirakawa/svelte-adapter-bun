@@ -3,6 +3,7 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import glob from "tiny-glob";
 import type { Builder } from "@sveltejs/kit"
+import { externalsFromPackageJson } from "./externals.ts";
 
 // Resolve the files directory relative to the adapter's location
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -125,6 +126,8 @@ export default function (opts: AdapterOptions = {}) {
           format: "esm",
           splitting: true,
           sourcemap: "external",
+          packages: "bundle",
+          external: externalsFromPackageJson(pkg),
           naming: {
             entry: "index.js",
             chunk: "chunks/[name]-[hash].js",
@@ -157,6 +160,10 @@ export default function (opts: AdapterOptions = {}) {
         };
 
         await Bun.write(`${out}/package.json`, JSON.stringify(package_data, null, 2));
+
+        if (existsSync("bun.lock")) {
+          await Bun.write(`${out}/bun.lock`, await Bun.file("bun.lock").text());
+        }
 
         builder.log.success(`Start server with: bun ./${out}/index.js`);
       } catch (error) {

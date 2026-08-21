@@ -6,6 +6,7 @@ import type { Builder } from "@sveltejs/kit"
 import { externalsFromPackageJson } from "./externals.ts";
 import { patchServerWebsocketSource } from "./websocket-patch.ts";
 import { maybeInstrument } from "./instrument.ts";
+import { adaptTempDir } from "./adapt-dir.ts";
 
 // Resolve the files directory relative to the adapter's location
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -96,8 +97,7 @@ export default function (opts: AdapterOptions = {}) {
 
         builder.log.minor(`Bundling with production dependencies external`);
 
-        // Use SvelteKit's recommended intermediate directory
-        const tempDir = ".svelte-kit/svelte-adapter-bun";
+        const tempDir = adaptTempDir(builder);
         builder.rimraf(tempDir);
         builder.mkdirp(tempDir);
 

@@ -40,7 +40,7 @@ export default {
 |--------|------|---------|-------------|
 | `out` | `string` | `'build'` | The directory to write the built files to |
 | `precompress` | `boolean \| CompressOptions` | `false` | Enable precompression of assets |
-| `envPrefix` | `string` | `''` | Prefix for environment variables |
+| `envPrefix` | `string` | `''` | Prefix for deploy env (`HOST`, `PORT`, `SOCKET_PATH`, `ORIGIN`, forwarded-header names) |
 | `development` | `boolean` | `false` | Enable development mode (disables minification) |
 | `dynamic_origin` | `boolean` | `false` | Enable dynamic origin support |
 | `xff_depth` | `number` | `1` | X-Forwarded-For depth for trusted proxies |

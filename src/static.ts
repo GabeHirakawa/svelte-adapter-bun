@@ -8,6 +8,7 @@ function getMimeType(pathname: string): string | undefined {
   const ext = pathname.split(".").pop()?.toLowerCase();
   const mimeTypes: MimeTypeMap = {
     html: "text/html",
+    txt: "text/plain;charset=utf-8",
     css: "text/css",
     js: "application/javascript",
     mjs: "application/javascript",

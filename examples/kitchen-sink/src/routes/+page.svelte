@@ -20,8 +20,8 @@
 		{
 			href: '/adapter-probe.txt',
 			kicker: 'Assets + ranges',
-			title: 'Bun.file, brotli/gzip siblings, 206 / 416',
-			body: 'client/ and prerendered/ are served natively. Single ranges slice the file; several become multipart/byteranges.'
+			title: 'Bun.file serves a static probe, including Range',
+			body: 'The txt is left uncompressed so a browser can display it. Single ranges slice the file; several become multipart/byteranges. Precompress is on /about and hashed assets.'
 		},
 		{
 			href: '/api/read',

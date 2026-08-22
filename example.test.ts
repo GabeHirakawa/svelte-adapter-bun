@@ -226,7 +226,6 @@ describe("kitchen-sink example", () => {
   test("negotiates precompressed siblings over raw HTTP", async () => {
     expect(existsSync(join(BUILD, "prerendered", "about.html.br"))).toBe(true);
     expect(existsSync(join(BUILD, "prerendered", "about.html.gz"))).toBe(true);
-    expect(existsSync(join(BUILD, "client", "adapter-probe.txt.br"))).toBe(true);
 
     const brotli = await rawRequest({
       port: server.port,
@@ -239,22 +238,28 @@ describe("kitchen-sink example", () => {
 
     const gzip = await rawRequest({
       port: server.port,
-      path: "/adapter-probe.txt",
+      path: "/about",
       headers: { "Accept-Encoding": "gzip" },
     });
     expect(gzip.status).toBe(200);
     expect(gzip.headers.get("content-encoding")).toBe("gzip");
-    expect(gzip.headers.get("content-type")).toMatch(/text\/plain/);
+    expect(gzip.headers.get("content-type")).toMatch(/text\/html/);
+  });
 
-    const txtBr = await rawRequest({
+  test("serves the static probe as uncompressed text/plain", async () => {
+    expect(existsSync(join(BUILD, "client", "adapter-probe.txt.br"))).toBe(false);
+    expect(existsSync(join(BUILD, "client", "adapter-probe.txt.gz"))).toBe(false);
+
+    const txt = await rawRequest({
       port: server.port,
       path: "/adapter-probe.txt",
-      headers: { "Accept-Encoding": "br" },
+      headers: { "Accept-Encoding": "gzip, deflate, br" },
     });
-    expect(txtBr.status).toBe(200);
-    expect(txtBr.headers.get("content-encoding")).toBe("br");
-    expect(txtBr.headers.get("content-type")).toMatch(/text\/plain/);
-    expect(txtBr.headers.get("content-disposition") ?? "").not.toMatch(/\.br/i);
+    expect(txt.status).toBe(200);
+    expect(txt.headers.get("content-type")).toMatch(/text\/plain/);
+    expect(txt.headers.get("content-encoding")).toBeNull();
+    expect(txt.headers.get("content-disposition")).toBeNull();
+    expect(new TextDecoder().decode(txt.body)).toBe(PROBE_TXT);
   });
 
   test("serves single, multipart, and unsatisfiable byte ranges", async () => {

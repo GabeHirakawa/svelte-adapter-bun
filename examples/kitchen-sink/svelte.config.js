@@ -8,7 +8,7 @@ const config = {
 			precompress: {
 				brotli: true,
 				gzip: true,
-				files: ['html', 'js', 'json', 'css', 'svg', 'xml', 'wasm', 'txt']
+				files: ['html', 'js', 'json', 'css', 'svg', 'xml', 'wasm']
 			},
 			envPrefix: process.env.ADAPTER_ENV_PREFIX ?? '',
 			xff_depth: Number.parseInt(process.env.ADAPTER_XFF_DEPTH ?? '1', 10),

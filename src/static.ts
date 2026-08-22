@@ -55,6 +55,9 @@ export function createStaticHandler(
     if (mimeType) {
       headers["content-type"] = mimeType;
     }
+    if (mimeType?.startsWith("text/")) {
+      headers["content-disposition"] = "inline";
+    }
     if (picked.encoding) {
       headers["content-encoding"] = picked.encoding;
       headers["vary"] = "accept-encoding";

@@ -192,6 +192,7 @@ describe("kitchen-sink example", () => {
     expect(existsSync(join(BUILD, "package.json"))).toBe(true);
     expect(existsSync(join(BUILD, "bun.lock"))).toBe(true);
     expect(existsSync(join(BUILD, "client", "adapter-probe.txt"))).toBe(true);
+    expect(existsSync(join(BUILD, "client", "probe.txt"))).toBe(true);
     expect(existsSync(join(BUILD, "prerendered", "about.html"))).toBe(true);
     expect(existsSync(join(BUILD, "instrumentation.server.js"))).toBe(true);
 
@@ -252,13 +253,13 @@ describe("kitchen-sink example", () => {
 
     const txt = await rawRequest({
       port: server.port,
-      path: "/adapter-probe.txt",
+      path: "/probe.txt",
       headers: { "Accept-Encoding": "gzip, deflate, br" },
     });
     expect(txt.status).toBe(200);
     expect(txt.headers.get("content-type")).toMatch(/text\/plain/);
     expect(txt.headers.get("content-encoding")).toBeNull();
-    expect(txt.headers.get("content-disposition")).toBeNull();
+    expect(txt.headers.get("content-disposition")).toBe("inline");
     expect(new TextDecoder().decode(txt.body)).toBe(PROBE_TXT);
   });
 

@@ -65,7 +65,7 @@ describe("createStaticHandler ranges", () => {
     expect(response?.status).toBe(200);
     expect(response?.headers.get("content-encoding")).toBe("br");
     expect(response?.headers.get("content-type")).toMatch(/text\/plain/);
-    expect(response?.headers.get("content-disposition")).toBeNull();
+    expect(response?.headers.get("content-disposition")).toBe("inline");
   });
 
   test("returns 206 multipart/byteranges for multiple ranges", async () => {

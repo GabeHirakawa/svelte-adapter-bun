@@ -19,7 +19,7 @@
 			external: true
 		},
 		{
-			href: '/adapter-probe.txt',
+			href: '/probe.txt',
 			kicker: 'Assets + ranges',
 			title: 'Bun.file serves a static probe, including Range',
 			body: 'The txt is left uncompressed so a browser can display it. Single ranges slice the file; several become multipart/byteranges. Precompress is on /about and hashed assets.',

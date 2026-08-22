@@ -9,7 +9,7 @@
 		{ href: '/ws', label: 'Live chat' },
 		{ href: '/about', label: 'Prerendered' },
 		{ href: '/form', label: 'Form action' },
-		{ href: '/adapter-probe.txt', label: 'Static txt', external: true },
+		{ href: '/probe.txt', label: 'Static txt', external: true },
 		{ href: '/api/probe', label: 'JSON probe', external: true }
 	] as const;
 </script>

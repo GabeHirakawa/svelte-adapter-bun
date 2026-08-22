@@ -16,7 +16,7 @@ deploy-dir assertion behind it.
 | Client address | `/api/probe` reports `getClientAddress()` |
 | Kit platform | probe includes `{ server, request }` keys |
 | Kit websocket | `/ws` upgrades via `event.platform.server.upgrade` |
-| Serve assets | `/adapter-probe.txt` (uncompressed text) and prerendered `/about` with `.br` / `.gz` |
+| Serve assets | `/probe.txt` (uncompressed text) and prerendered `/about` with `.br` / `.gz` |
 | Range | single `206`, multipart `206`, unsatisfiable `416` |
 | Serve limits | `BODY_SIZE_LIMIT` on `POST /api/echo`; `IDLE_TIMEOUT` at boot |
 | Kit read | `GET /api/read` uses `read` from `$app/server` |

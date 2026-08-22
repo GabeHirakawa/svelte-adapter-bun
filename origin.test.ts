@@ -21,6 +21,25 @@ describe("requestOrigin", () => {
     ).toBe("https://localhost:3000");
   });
 
+  test("uses the request protocol when PROTOCOL_HEADER is unset and a fallback is given", () => {
+    expect(
+      requestOrigin({
+        fallbackProtocol: "http",
+        headers: headers({ host: "127.0.0.1:3000" }),
+      }),
+    ).toBe("http://127.0.0.1:3000");
+  });
+
+  test("prefers the request protocol over a bare https default when the proto header is missing", () => {
+    expect(
+      requestOrigin({
+        protocolHeader: "x-forwarded-proto",
+        fallbackProtocol: "http",
+        headers: headers({ host: "127.0.0.1:3000" }),
+      }),
+    ).toBe("http://127.0.0.1:3000");
+  });
+
   test("reads protocol, host, and port from forwarded headers", () => {
     expect(
       requestOrigin({

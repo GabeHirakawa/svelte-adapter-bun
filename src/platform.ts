@@ -33,6 +33,7 @@ export async function getRequest({
     protocolHeader: protocol_header,
     hostHeader: host_header,
     portHeader: port_header,
+    fallbackProtocol: url.protocol === "https:" ? "https" : "http",
     headers: request.headers,
   });
   if (resolved) {

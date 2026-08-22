@@ -182,7 +182,10 @@ describe("kitchen-sink example", () => {
 
   afterAll(async () => {
     await Promise.all(children.splice(0).map((child) => stop(child)));
-  });
+    // Later tests rebuild with prefixed env / assets:false; put a normal
+    // deploy directory back so a local `bun ./build/index.js` still works.
+    await buildExample();
+  }, 180_000);
 
   test("writes a Bun deploy directory with the adapter-node dep split", async () => {
     expect(existsSync(join(BUILD, "index.js"))).toBe(true);

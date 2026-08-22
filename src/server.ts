@@ -26,7 +26,7 @@ export async function createServer(config: ServerConfig) {
   const server = new Server(manifest);
   await server.init({
     env: process.env,
-    read: (file) => kitRead(clientAssetRoot(import.meta.dir, base), file),
+    read: (file: string) => kitRead(clientAssetRoot(import.meta.dir, base), file),
   });
   const websocket = websocketFromKitServer(server);
 

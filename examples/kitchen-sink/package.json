@@ -1,0 +1,26 @@
+{
+  "name": "svelte-adapter-bun-kitchen-sink",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "bun --bun vite build",
+    "start": "bun ./build/index.js",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+  },
+  "dependencies": {
+    "dequal": "^2.0.3"
+  },
+  "devDependencies": {
+    "@gkh/svelte-adapter-bun": "file:../..",
+    "@sveltejs/kit": "^2.70.3",
+    "@sveltejs/vite-plugin-svelte": "^5.1.1",
+    "@types/bun": "latest",
+    "clsx": "^2.1.1",
+    "svelte": "^5.39.6",
+    "svelte-check": "^4.3.1",
+    "typescript": "^5.9.2",
+    "vite": "^6.3.5"
+  }
+}

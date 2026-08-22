@@ -33,12 +33,14 @@ export async function getRequest({
     protocolHeader: protocol_header,
     hostHeader: host_header,
     portHeader: port_header,
+    fallbackProtocol: url.protocol === "https:" ? "https" : "http",
     headers: request.headers,
   });
   if (resolved) {
     const originUrl = new URL(resolved);
     url.protocol = originUrl.protocol;
-    url.host = originUrl.host;
+    url.hostname = originUrl.hostname;
+    url.port = originUrl.port;
   }
   
   const headers = new Headers(request.headers);

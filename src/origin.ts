@@ -3,6 +3,7 @@ export type RequestOriginOptions = {
   protocolHeader?: string;
   hostHeader?: string;
   portHeader?: string;
+  fallbackProtocol?: "http" | "https";
   headers: Headers;
 };
 
@@ -19,13 +20,17 @@ export function requestOrigin({
   protocolHeader,
   hostHeader,
   portHeader,
+  fallbackProtocol,
   headers,
 }: RequestOriginOptions): string | undefined {
   if (origin) {
     return origin.replace(/\/$/, "");
   }
 
-  const protocol = forwardedProtocol(protocolHeader ? headers.get(protocolHeader) : null) ?? "https";
+  const protocol =
+    forwardedProtocol(protocolHeader ? headers.get(protocolHeader) : null) ??
+    fallbackProtocol ??
+    "https";
   const host = ((hostHeader && headers.get(hostHeader)) || headers.get("host") || "").trim();
   if (!host) {
     return undefined;

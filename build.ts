@@ -87,7 +87,7 @@ const distPkg = {
       "types": "./websocket.d.ts"
     }
   },
-  files: ["index.js", "index.js.map", "websocket.js", "websocket.js.map", "*.d.ts", "files"],
+  files: ["index.js", "index.js.map", "websocket.js", "websocket.js.map", "*.d.ts", "ambient.d.ts", "files"],
   keywords: pkg.keywords,
   author: pkg.author,
   license: pkg.license,
@@ -115,10 +115,11 @@ if (existsSync("src")) {
   console.log("📁 Copied runtime files to dist/files");
 }
 
-// Generate TypeScript declarations
 try {
-  await Bun.$`bunx tsc --declaration --emitDeclarationOnly --outDir dist`;
-  console.log("📝 Generated TypeScript declarations");
+  await Bun.$`bunx tsc --noEmit`;
+  await Bun.write("dist/ambient.d.ts", await Bun.file("ambient.d.ts").text());
+  await Bun.write("dist/index.d.ts", await Bun.file("index.d.ts").text());
+  console.log("📝 Published ambient and adapter types");
 } catch (error) {
   console.error("❌ Failed to generate TypeScript declarations:", error);
   process.exit(1);

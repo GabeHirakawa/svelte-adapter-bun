@@ -13,6 +13,7 @@
   },
   "peerDependencies": {
     "@sveltejs/kit": "^2.31.0",
+    "bun-types": ">=1.0.0",
     "typescript": "^5"
   },
   "exports": {
@@ -21,6 +22,7 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "types": "./dist/index.d.ts",
   "description": "SvelteKit adapter for Bun with optimized bundling using Bun's native bundler",
   "engines": {
     "bun": ">=1.0.0"
@@ -40,7 +42,8 @@
   "scripts": {
     "build": "bun run build.ts",
     "dev": "bun run index.ts",
-    "test": "bun test",
+    "test": "bun test --timeout 30000",
+    "test:example": "bun test example.test.ts --timeout 180000",
     "prepublishOnly": "bun run build"
   },
   "type": "module"

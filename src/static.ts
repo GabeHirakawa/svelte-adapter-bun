@@ -8,6 +8,7 @@ function getMimeType(pathname: string): string | undefined {
   const ext = pathname.split(".").pop()?.toLowerCase();
   const mimeTypes: MimeTypeMap = {
     html: "text/html",
+    txt: "text/plain;charset=utf-8",
     css: "text/css",
     js: "application/javascript",
     mjs: "application/javascript",
@@ -44,15 +45,18 @@ export function createStaticHandler(
       request.headers.get("accept-encoding") ?? undefined,
       existsSync,
     );
-    const mimeType = getMimeType(url.pathname) || Bun.file(picked.path).type;
+    const mimeType = getMimeType(url.pathname) || Bun.file(assetPath).type;
     const headers: Record<string, string> = {
       "cache-control": url.pathname.includes("/_app/immutable/")
         ? "public, max-age=31536000, immutable"
-        : "public, max-age=3600",
+        : "no-store",
     };
 
     if (mimeType) {
       headers["content-type"] = mimeType;
+    }
+    if (mimeType?.startsWith("text/")) {
+      headers["content-disposition"] = "inline";
     }
     if (picked.encoding) {
       headers["content-encoding"] = picked.encoding;

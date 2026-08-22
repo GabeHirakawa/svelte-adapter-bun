@@ -18,6 +18,22 @@ A high-performance SvelteKit adapter that leverages Bun's native APIs for optima
 bun add -D svelte-adapter-bun
 ```
 
+## Example app
+
+`examples/kitchen-sink` is a SvelteKit app that exercises every adapter contract
+(deploy output, listen/origin env, client address, assets, ranges, WebSocket,
+`$app/server` `read`, instrumentation, and shutdown). `example.test.ts` builds
+that app and hits the running Bun server.
+
+```bash
+bun run build
+cd examples/kitchen-sink
+bun install
+bun run build
+# adapt() uses Bun.build / Bun.file — the example script is `bun --bun vite build`
+ORIGIN=http://127.0.0.1:3000 bun ./build/index.js
+```
+
 ## Usage
 
 In your `svelte.config.js`:
@@ -91,20 +107,33 @@ export const websocket: Bun.WebSocketHandler = {
 };
 ```
 
-`event.platform` is `{ server, request }`. Declare it on `App.Platform` in `src/app.d.ts`:
+`event.platform` is `{ server, request }`. Do not copy that interface by hand.
+Reference the adapter from `src/app.d.ts` so TypeScript loads `bun-types` and
+augments `App.Platform` in one step:
 
 ```ts
+/// <reference types="@gkh/svelte-adapter-bun" />
+
 declare global {
   namespace App {
-    interface Platform {
-      server: Bun.Server;
-      request: Request;
-    }
+    // Platform is { server: Bun.Server; request: Request } from the adapter.
+    // Add your own fields here if you put extra data on event.platform.
   }
 }
 
 export {};
 ```
+
+That reference is how you get **Bun globals** as well (`Bun.redis`, `Bun.file`,
+`Bun.sql`, `Bun.s3`, …). Those live on the `Bun` namespace from `bun-types`,
+not on `event.platform`. The adapter does not wrap them — they are process-wide
+once the app is running on Bun. `App.Platform` is only the per-request object
+passed into `server.respond` so `handle` can call
+`event.platform.server.upgrade(event.platform.request)`.
+
+Install `bun-types` next to the adapter (`bun add -d bun-types`). Without the
+reference (or a `/// <reference types="bun-types" />` of your own), `Bun` is an
+unknown name and `event.platform` stays Kit’s empty `Platform`.
 
 Connect from the client:
 
@@ -138,7 +167,7 @@ With no prefix, `PORT` is omitted from `Bun.serve` so Bun 1.4 can read `PORT`, `
 ADDRESS_HEADER=X-Forwarded-For XFF_DEPTH=2 bun ./build/index.js
 ```
 
-The public origin for `event.url` is `ORIGIN` if set. Otherwise it is `PROTOCOL_HEADER` (default `https` — typical behind a TLS-terminating proxy) + `HOST_HEADER` or the request `Host` + optional `PORT_HEADER` (appended only when the host has no port). If `PROTOCOL_HEADER` is unset, the protocol is `https` so CSRF checks match the browser origin when Bun.serve only saw `http`.
+The public origin for `event.url` is `ORIGIN` if set. Otherwise it is the forwarded protocol from `PROTOCOL_HEADER` (when that header is present on the request) + `HOST_HEADER` or the request `Host` + optional `PORT_HEADER` (appended only when the host has no port). When `PROTOCOL_HEADER` is configured but missing on a request, or when no forwarded headers are configured at all, the protocol falls back to the incoming request URL (`http` for plain `Bun.serve`, `https` when the request arrived as HTTPS) so same-origin form actions and CSRF checks match what the browser sent.
 
 `read` from `$app/server` works. The adapter claims `supports.read` and `Server.init` streams files from `client/` (plus Kit `paths.base`) via `Bun.file`.
 
@@ -156,10 +185,11 @@ BODY_SIZE_LIMIT=2M IDLE_TIMEOUT=30 bun ./build/index.js
 
 ## Building and Running
 
-After building your app:
+After building your app with Bun (`bun --bun vite build` or `bun run build`
+if the script already uses Bun):
 
 ```bash
-bun run build
+bun --bun vite build
 ```
 
 The adapter generates a minimal `package.json` in the build directory. To run the server:
@@ -242,7 +272,7 @@ Intentional differences:
 | Assets | `assets` (not `serveAssets`). `Bun.file` plus `.br` / `.gz` negotiation, not sirv. Single and multipart `Range: bytes=` via `Bun.file.slice` | Avoid a Node static-server dependency; precompress already wrote the siblings |
 | `BODY_SIZE_LIMIT` | `Infinity` / `0` / `none` disable the cap | adapter-node’s documented off switch; gornostay rejects `Infinity` at boot |
 | `IDLE_TIMEOUT` | Must be `0`–`255` (Bun per-connection idle). Out-of-range values throw a clear error | Bun will crash on `256+`. This is not adapter-node’s process idle-shutdown |
-| Request origin | `ORIGIN`, or forwarded headers with protocol default `https`. Empty `HOST_HEADER` means use `Host`. `PORT_HEADER` is not appended when the host already has a port | Same shape as gornostay. Default `https` keeps CSRF working behind TLS-terminating proxies (`request.url` on Bun.serve is usually `http`) |
+| Request origin | `ORIGIN`, or forwarded headers; when proto is unset, fall back to the request URL protocol. Empty `HOST_HEADER` means use `Host`. `PORT_HEADER` is not appended when the host already has a port | Same shape as gornostay. Request-protocol fallback keeps local `http://` CSRF honest; set `PROTOCOL_HEADER` (or `ORIGIN`) behind TLS-terminating proxies |
 | `development` / `dynamic_origin` | Not accepted | Leftover from old gornostay. Current gornostay dropped them. Origin is always `ORIGIN` or forwarded headers; we do not minify the Bun entry |
 
 ## License

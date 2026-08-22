@@ -241,6 +241,17 @@ describe("kitchen-sink example", () => {
     });
     expect(gzip.status).toBe(200);
     expect(gzip.headers.get("content-encoding")).toBe("gzip");
+    expect(gzip.headers.get("content-type")).toMatch(/text\/plain/);
+
+    const txtBr = await rawRequest({
+      port: server.port,
+      path: "/adapter-probe.txt",
+      headers: { "Accept-Encoding": "br" },
+    });
+    expect(txtBr.status).toBe(200);
+    expect(txtBr.headers.get("content-encoding")).toBe("br");
+    expect(txtBr.headers.get("content-type")).toMatch(/text\/plain/);
+    expect(txtBr.headers.get("content-disposition") ?? "").not.toMatch(/\.br/i);
   });
 
   test("serves single, multipart, and unsatisfiable byte ranges", async () => {

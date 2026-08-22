@@ -53,6 +53,21 @@ describe("createStaticHandler ranges", () => {
     expect(await response?.text()).toBe("hello");
   });
 
+  test("keeps the original text/plain type when serving a brotli sibling", async () => {
+    const dir = await mkdtemp(join(tmpdir(), "adapter-br-mime-"));
+    await writeFile(join(dir, "hi.txt"), "hello world");
+    await writeFile(join(dir, "hi.txt.br"), "fake-br");
+    const handler = createStaticHandler(dir);
+    const response = await handler(
+      new Request("http://localhost/hi.txt", { headers: { "accept-encoding": "br" } }),
+    );
+
+    expect(response?.status).toBe(200);
+    expect(response?.headers.get("content-encoding")).toBe("br");
+    expect(response?.headers.get("content-type")).toMatch(/text\/plain/);
+    expect(response?.headers.get("content-disposition")).toBeNull();
+  });
+
   test("returns 206 multipart/byteranges for multiple ranges", async () => {
     const dir = await mkdtemp(join(tmpdir(), "adapter-multipart-"));
     await writeFile(join(dir, "hi.txt"), "hello world");

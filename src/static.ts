@@ -44,7 +44,7 @@ export function createStaticHandler(
       request.headers.get("accept-encoding") ?? undefined,
       existsSync,
     );
-    const mimeType = getMimeType(url.pathname) || Bun.file(picked.path).type;
+    const mimeType = getMimeType(url.pathname) || Bun.file(assetPath).type;
     const headers: Record<string, string> = {
       "cache-control": url.pathname.includes("/_app/immutable/")
         ? "public, max-age=31536000, immutable"

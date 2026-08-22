@@ -1,7 +1,17 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import '../app.css';
 
 	let { children } = $props();
+
+	const links = [
+		['/', 'Features'],
+		['/ws', 'Live chat'],
+		['/about', 'Prerendered'],
+		['/form', 'Form action'],
+		['/adapter-probe.txt', 'Static txt'],
+		['/api/probe', 'JSON probe']
+	] as const;
 </script>
 
 <div class="shell">
@@ -9,16 +19,14 @@
 		<p class="eyebrow">svelte-adapter-bun</p>
 		<h1>Kitchen sink</h1>
 		<p class="lede">
-			A SvelteKit app that exercises every adapter contract: deploy output, listen env, origin,
-			client address, assets, ranges, WebSocket, <code>read</code>, instrumentation, and shutdown.
+			What this adapter opens up that a generic Node deploy does not: native Bun WebSockets, origin
+			and client-address policy, precompressed assets with ranges, <code>read</code>, and Kit
+			instrumentation — running on <code>Bun.serve</code>.
 		</p>
 		<nav>
-			<a href="/">Probe</a>
-			<a href="/about">Prerendered</a>
-			<a href="/form">Form action</a>
-			<a href="/ws">WebSocket</a>
-			<a href="/adapter-probe.txt">Static txt</a>
-			<a href="/api/probe">JSON probe</a>
+			{#each links as [href, label] (href)}
+				<a {href} aria-current={page.url.pathname === href ? 'page' : undefined}>{label}</a>
+			{/each}
 		</nav>
 	</header>
 	<main>
@@ -28,48 +36,53 @@
 
 <style>
 	.shell {
-		max-width: 52rem;
+		max-width: 72rem;
 		margin: 0 auto;
-		padding: 2.5rem 1.25rem 4rem;
+		padding: 2.4rem 1.25rem 5rem;
 	}
 
 	.eyebrow {
 		margin: 0;
 		color: var(--accent);
-		letter-spacing: 0.08em;
+		letter-spacing: 0.14em;
 		text-transform: uppercase;
-		font-size: 0.75rem;
-		font-family: ui-monospace, "IBM Plex Mono", Menlo, monospace;
+		font-size: 0.72rem;
+		font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
 	}
 
 	h1 {
-		margin: 0.35rem 0 0.75rem;
-		font-size: 2.4rem;
+		margin: 0.4rem 0 0.75rem;
+		font-size: clamp(2.4rem, 6vw, 4rem);
 		font-weight: 600;
+		letter-spacing: -0.03em;
 	}
 
 	.lede {
 		color: var(--muted);
-		max-width: 40rem;
+		max-width: 44rem;
+		font-size: 1.12rem;
 	}
 
 	nav {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.75rem 1.1rem;
-		margin: 1.4rem 0 2rem;
-		padding: 0.85rem 0;
-		border-top: 1px solid var(--line);
-		border-bottom: 1px solid var(--line);
+		gap: 0.55rem;
+		margin: 1.6rem 0 2.1rem;
 	}
 
 	nav a {
 		text-decoration: none;
-		font-family: ui-monospace, "IBM Plex Mono", Menlo, monospace;
-		font-size: 0.86rem;
+		font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+		font-size: 0.8rem;
+		color: var(--fg);
+		border: 1px solid var(--line);
+		padding: 0.4rem 0.7rem;
+		background: rgba(34, 25, 16, 0.7);
 	}
 
-	nav a:hover {
-		text-decoration: underline;
+	nav a:hover,
+	nav a[aria-current='page'] {
+		border-color: var(--accent);
+		color: var(--accent);
 	}
 </style>

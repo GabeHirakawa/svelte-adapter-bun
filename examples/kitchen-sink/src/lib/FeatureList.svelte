@@ -14,7 +14,7 @@
 </script>
 
 <section>
-	<h2>Live runtime probe</h2>
+	<h2>This request, through the adapter</h2>
 	<dl>
 		{#each rows as [label, value] (label)}
 			<div>
@@ -29,12 +29,14 @@
 	section {
 		background: var(--card);
 		border: 1px solid var(--line);
-		padding: 1.15rem 1.2rem 0.4rem;
+		padding: 1.15rem 1.2rem 0.35rem;
+		box-shadow: var(--shadow);
 	}
 
 	h2 {
 		margin: 0 0 0.85rem;
-		font-size: 1.05rem;
+		font-size: 1.2rem;
+		font-weight: 600;
 	}
 
 	dl {
@@ -57,6 +59,7 @@
 	dd {
 		margin: 0;
 		overflow-wrap: anywhere;
+		font-size: 0.86rem;
 	}
 
 	@media (max-width: 640px) {

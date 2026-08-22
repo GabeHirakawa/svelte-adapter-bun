@@ -16,6 +16,7 @@
 		background: var(--card);
 		border: 1px solid var(--line);
 		padding: 1.2rem;
+		box-shadow: var(--shadow);
 	}
 
 	h2 {

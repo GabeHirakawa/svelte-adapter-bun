@@ -28,11 +28,23 @@ export const handle: Handle = async ({ event, resolve }) => {
 	return resolve(event);
 };
 
+function asText(message: string | Buffer) {
+	return typeof message === 'string' ? message : new TextDecoder().decode(message);
+}
+
+function adapterLog(event: 'open' | 'message' | 'send', detail: string) {
+	return JSON.stringify({ type: 'adapter-log', at: Date.now(), event, detail });
+}
+
 export const websocket: Bun.WebSocketHandler = {
 	open(ws) {
 		ws.send('Welcome!');
+		ws.send(adapterLog('open', 'Bun.WebSocketHandler.open — sent Welcome!'));
 	},
 	message(ws, message) {
+		const text = asText(message);
+		ws.send(adapterLog('message', `received "${text}"`));
 		ws.send(message);
+		ws.send(adapterLog('send', `echoed "${text}"`));
 	}
 };

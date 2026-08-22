@@ -30,6 +30,7 @@ bun run build
 cd examples/kitchen-sink
 bun install
 bun run build
+# adapt() uses Bun.build / Bun.file — the example script is `bun --bun vite build`
 ORIGIN=http://127.0.0.1:3000 bun ./build/index.js
 ```
 
@@ -171,10 +172,11 @@ BODY_SIZE_LIMIT=2M IDLE_TIMEOUT=30 bun ./build/index.js
 
 ## Building and Running
 
-After building your app:
+After building your app with Bun (`bun --bun vite build` or `bun run build`
+if the script already uses Bun):
 
 ```bash
-bun run build
+bun --bun vite build
 ```
 
 The adapter generates a minimal `package.json` in the build directory. To run the server:

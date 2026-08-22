@@ -33,6 +33,7 @@
     "types.d.ts"
   ],
   "exclude": [
+    "src/hooks.example.ts",
     "test-app/**/*",
     "examples/**/*",
     "node_modules",

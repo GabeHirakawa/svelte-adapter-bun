@@ -108,7 +108,7 @@ export async function applyByteRange(
   rangeHeader: string | null | undefined,
   method: string,
   options: RangeOptions = {},
-): Promise<{ body: BodyInit | null; status: number; headers: Record<string, string> }> {
+): Promise<{ body: Bun.BunFile | Uint8Array | null; status: number; headers: Record<string, string> }> {
   const parsed = parseByteRange(rangeHeader, size);
   const headers: Record<string, string> = {
     "accept-ranges": "bytes",

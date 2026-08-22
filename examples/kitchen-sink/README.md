@@ -8,7 +8,7 @@ deploy-dir assertion behind it.
 
 | Contract | How this app hits it |
 | --- | --- |
-| Adapt / bundle | `vite build` + `svelte-adapter-bun` writes `build/` |
+| Adapt / bundle | `bun --bun vite build` + `svelte-adapter-bun` writes `build/` |
 | Dep split | `dequal` is a production dependency; `clsx` is a bundled `devDependency` |
 | Deploy directory | `index.js`, `package.json`, `bun.lock`, `client/`, `prerendered/` |
 | Deploy env / listen | `HOST`, `PORT`, `SOCKET_PATH`, optional `ADAPTER_ENV_PREFIX` |

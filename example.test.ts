@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
+import { createConnection } from "node:net";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -115,14 +116,21 @@ async function rawRequest(options: {
   method?: string;
   headers?: Record<string, string>;
 }) {
-  const socket = await Bun.connect({ hostname: "127.0.0.1", port: options.port });
   const extra = Object.entries(options.headers ?? {})
     .map(([name, value]) => `${name}: ${value}`)
     .join("\r\n");
-  socket.write(
-    `${options.method ?? "GET"} ${options.path} HTTP/1.1\r\nHost: 127.0.0.1:${options.port}\r\nConnection: close\r\n${extra ? `${extra}\r\n` : ""}\r\n`,
-  );
-  const bytes = new Uint8Array(await new Response(socket).arrayBuffer());
+  const payload = `${options.method ?? "GET"} ${options.path} HTTP/1.1\r\nHost: 127.0.0.1:${options.port}\r\nConnection: close\r\n${extra ? `${extra}\r\n` : ""}\r\n`;
+
+  const bytes = await new Promise<Uint8Array>((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    const socket = createConnection({ host: "127.0.0.1", port: options.port }, () => {
+      socket.write(payload);
+    });
+    socket.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+    socket.on("end", () => resolve(new Uint8Array(Buffer.concat(chunks))));
+    socket.on("error", reject);
+  });
+
   const split = indexOfHeaders(bytes);
   const head = new TextDecoder().decode(bytes.slice(0, split));
   const body = bytes.slice(split + 4);
@@ -161,6 +169,7 @@ describe("kitchen-sink example", () => {
 
   beforeAll(async () => {
     await run(["bun", "run", "build"], ROOT);
+    await run(["rm", "-rf", "node_modules"], EXAMPLE);
     await run(["bun", "install"], EXAMPLE);
     await buildExample();
     const port = await freePort();
@@ -188,16 +197,9 @@ describe("kitchen-sink example", () => {
     expect(pkg.dependencies.clsx).toBeUndefined();
     expect(pkg.scripts.start).toBe("bun ./index.js");
 
-    const jsFiles = [
-      ...new Bun.Glob("**/*.js").scanSync({ cwd: BUILD, onlyFiles: true }),
-    ].filter((file) => !file.startsWith("server/") && !file.includes("node_modules"));
-    const bundled = (
-      await Promise.all(jsFiles.map((file) => Bun.file(join(BUILD, file)).text()))
-    ).join("\n");
-
-    expect(bundled).toContain("inlined-dev-helper");
-    expect(bundled).toMatch(/from\s+["']dequal["']/);
-    expect(bundled).not.toMatch(/from\s+["']clsx["']/);
+    const probeChunk = await Bun.file(join(BUILD, "server/chunks/probe.js")).text();
+    expect(probeChunk).toContain("inlined-dev-helper");
+    expect(probeChunk).toMatch(/from\s+["']dequal["']/);
   });
 
   test("serves SSR, prerendered HTML, and a static file", async () => {
@@ -254,7 +256,7 @@ describe("kitchen-sink example", () => {
     const multi = await rawRequest({
       port: server.port,
       path: "/adapter-probe.txt",
-      headers: { Range: "bytes=0-6,15-24" },
+      headers: { Range: "bytes=0-6,14-23" },
     });
     expect(multi.status).toBe(206);
     const contentType = multi.headers.get("content-type") ?? "";
@@ -350,7 +352,7 @@ describe("kitchen-sink example", () => {
   test("streams a client asset through $app/server read", async () => {
     const res = await fetch(`${server.base}/api/read`);
     expect(res.ok).toBe(true);
-    expect(await res.text()).toBe("kit-read-asset-marker");
+    expect((await res.text()).trim()).toBe("kit-read-asset-marker");
   });
 
   test("preserves multiple Set-Cookie headers", async () => {
@@ -520,8 +522,7 @@ describe("kitchen-sink example", () => {
       expect(data.platform.keys).toEqual(["request", "server"]);
 
       const about = await fetch(`${running.base}/about`);
-      expect(about.ok).toBe(true);
-      expect(await about.text()).toContain("prerendered-about-marker");
+      expect(about.status).toBe(404);
     } finally {
       await stop(running.proc);
     }

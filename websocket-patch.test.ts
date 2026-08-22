@@ -33,8 +33,27 @@ describe("patchServerWebsocketSource", () => {
     const patched = patchServerWebsocketSource(reconstructedGetHooks);
 
     expect(patched).toContain("async function get_hooks() {let websocket;");
-    expect(patched).toContain("({handle,websocket,");
-    expect(patched).toContain("return {websocket, handle,");
+    expect(patched).toContain("({handle, websocket,");
+    expect(patched).toContain("return { websocket, handle,");
+  });
+
+  test("threads websocket through Kit 2.70 spaced get_hooks destructure", () => {
+    const source = `
+async function get_hooks() {
+  let handle;
+  ({ handle, handleFetch, handleError, handleValidationError, init } = await import("../entries/hooks.server.js"));
+  return {
+    handle,
+    handleFetch,
+    handleError,
+    handleValidationError,
+    init,
+  };
+}
+`;
+    const patched = patchServerWebsocketSource(source);
+    expect(patched).toContain("({ handle, websocket, handleFetch,");
+    expect(patched).toContain("return {\n    websocket, handle,");
   });
 
   test("leaves unrelated server source unchanged", () => {

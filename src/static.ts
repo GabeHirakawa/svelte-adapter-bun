@@ -49,7 +49,7 @@ export function createStaticHandler(
     const headers: Record<string, string> = {
       "cache-control": url.pathname.includes("/_app/immutable/")
         ? "public, max-age=31536000, immutable"
-        : "public, max-age=3600",
+        : "no-store",
     };
 
     if (mimeType) {

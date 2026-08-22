@@ -5,12 +5,12 @@
 	let { children } = $props();
 
 	const links = [
-		['/', 'Features'],
-		['/ws', 'Live chat'],
-		['/about', 'Prerendered'],
-		['/form', 'Form action'],
-		['/adapter-probe.txt', 'Static txt'],
-		['/api/probe', 'JSON probe']
+		{ href: '/', label: 'Features' },
+		{ href: '/ws', label: 'Live chat' },
+		{ href: '/about', label: 'Prerendered' },
+		{ href: '/form', label: 'Form action' },
+		{ href: '/adapter-probe.txt', label: 'Static txt', external: true },
+		{ href: '/api/probe', label: 'JSON probe', external: true }
 	] as const;
 </script>
 
@@ -24,8 +24,14 @@
 			instrumentation — running on <code>Bun.serve</code>.
 		</p>
 		<nav>
-			{#each links as [href, label] (href)}
-				<a {href} aria-current={page.url.pathname === href ? 'page' : undefined}>{label}</a>
+			{#each links as link (link.href)}
+				<a
+					href={link.href}
+					rel={'external' in link ? 'external' : undefined}
+					aria-current={page.url.pathname === link.href ? 'page' : undefined}
+				>
+					{link.label}
+				</a>
 			{/each}
 		</nav>
 	</header>

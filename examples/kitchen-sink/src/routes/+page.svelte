@@ -15,19 +15,22 @@
 			href: '/api/probe',
 			kicker: 'Origin + client address',
 			title: 'ORIGIN, forwarded headers, XFF from the right',
-			body: 'event.url and getClientAddress() follow the adapter-node deploy-env names, with requestIP when no ADDRESS_HEADER is set.'
+			body: 'event.url and getClientAddress() follow the adapter-node deploy-env names, with requestIP when no ADDRESS_HEADER is set.',
+			external: true
 		},
 		{
 			href: '/adapter-probe.txt',
 			kicker: 'Assets + ranges',
 			title: 'Bun.file serves a static probe, including Range',
-			body: 'The txt is left uncompressed so a browser can display it. Single ranges slice the file; several become multipart/byteranges. Precompress is on /about and hashed assets.'
+			body: 'The txt is left uncompressed so a browser can display it. Single ranges slice the file; several become multipart/byteranges. Precompress is on /about and hashed assets.',
+			external: true
 		},
 		{
 			href: '/api/read',
 			kicker: 'Kit read',
 			title: 'read() from $app/server via Bun.file',
-			body: 'The adapter claims supports.read and streams imported client assets from the deploy directory.'
+			body: 'The adapter claims supports.read and streams imported client assets from the deploy directory.',
+			external: true
 		},
 		{
 			href: '/about',
@@ -61,7 +64,7 @@
 <ul class="grid">
 	{#each features as feature (feature.href)}
 		<li>
-			<a href={feature.href}>
+			<a href={feature.href} rel={'external' in feature ? 'external' : undefined}>
 				<p class="kicker">{feature.kicker}</p>
 				<h3>{feature.title}</h3>
 				<p>{feature.body}</p>

@@ -1,12 +1,9 @@
 /// <reference types="@sveltejs/kit" />
-/// <reference types="bun-types" />
+/// <reference types="@gkh/svelte-adapter-bun" />
 
 declare global {
 	namespace App {
-		interface Platform {
-			server: Bun.Server;
-			request: Request;
-		}
+		// Platform is filled in by the adapter ambient types.
 	}
 
 	var __ADAPTER_EXAMPLE_INSTRUMENTED__: boolean | undefined;

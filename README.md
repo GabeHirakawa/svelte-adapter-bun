@@ -107,20 +107,33 @@ export const websocket: Bun.WebSocketHandler = {
 };
 ```
 
-`event.platform` is `{ server, request }`. Declare it on `App.Platform` in `src/app.d.ts`:
+`event.platform` is `{ server, request }`. Do not copy that interface by hand.
+Reference the adapter from `src/app.d.ts` so TypeScript loads `bun-types` and
+augments `App.Platform` in one step:
 
 ```ts
+/// <reference types="@gkh/svelte-adapter-bun" />
+
 declare global {
   namespace App {
-    interface Platform {
-      server: Bun.Server;
-      request: Request;
-    }
+    // Platform is { server: Bun.Server; request: Request } from the adapter.
+    // Add your own fields here if you put extra data on event.platform.
   }
 }
 
 export {};
 ```
+
+That reference is how you get **Bun globals** as well (`Bun.redis`, `Bun.file`,
+`Bun.sql`, `Bun.s3`, …). Those live on the `Bun` namespace from `bun-types`,
+not on `event.platform`. The adapter does not wrap them — they are process-wide
+once the app is running on Bun. `App.Platform` is only the per-request object
+passed into `server.respond` so `handle` can call
+`event.platform.server.upgrade(event.platform.request)`.
+
+Install `bun-types` next to the adapter (`bun add -d bun-types`). Without the
+reference (or a `/// <reference types="bun-types" />` of your own), `Bun` is an
+unknown name and `event.platform` stays Kit’s empty `Platform`.
 
 Connect from the client:
 

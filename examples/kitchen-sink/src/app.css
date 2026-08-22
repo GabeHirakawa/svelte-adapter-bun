@@ -1,0 +1,42 @@
+:root {
+	color-scheme: dark;
+	--bg: #10110f;
+	--fg: #efe6d4;
+	--muted: #9a927f;
+	--accent: #f9b233;
+	--line: #2c2a22;
+	--card: #18170f;
+	--ok: #8fd18a;
+	--bad: #e07a6a;
+	font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+	background: var(--bg);
+	color: var(--fg);
+	line-height: 1.5;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	min-height: 100%;
+	background: var(--bg);
+}
+
+a {
+	color: var(--accent);
+}
+
+code,
+pre,
+.mono {
+	font-family: ui-monospace, "IBM Plex Mono", "SF Mono", Menlo, monospace;
+}
+
+button,
+input,
+textarea {
+	font: inherit;
+}

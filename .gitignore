@@ -9,6 +9,11 @@ dist
 # test directory
 test-app
 
+# example app artifacts
+examples/*/node_modules
+examples/*/.svelte-kit
+examples/*/build
+
 # code coverage
 coverage
 *.lcov

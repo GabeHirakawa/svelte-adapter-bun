@@ -18,6 +18,21 @@ A high-performance SvelteKit adapter that leverages Bun's native APIs for optima
 bun add -D svelte-adapter-bun
 ```
 
+## Example app
+
+`examples/kitchen-sink` is a SvelteKit app that exercises every adapter contract
+(deploy output, listen/origin env, client address, assets, ranges, WebSocket,
+`$app/server` `read`, instrumentation, and shutdown). `example.test.ts` builds
+that app and hits the running Bun server.
+
+```bash
+bun run build
+cd examples/kitchen-sink
+bun install
+bun run build
+ORIGIN=http://127.0.0.1:3000 bun ./build/index.js
+```
+
 ## Usage
 
 In your `svelte.config.js`:

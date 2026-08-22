@@ -19,4 +19,13 @@ describe("platform", () => {
     });
     expect(new URL(request.url).origin).toBe("https://prefixed.example");
   });
+
+  test("uses the request protocol when ORIGIN and forwarded proto are unset", async () => {
+    const request = await getRequest({
+      request: new Request("http://127.0.0.1:3000/api/probe", {
+        headers: { host: "127.0.0.1:3000" },
+      }),
+    });
+    expect(new URL(request.url).origin).toBe("http://127.0.0.1:3000");
+  });
 });

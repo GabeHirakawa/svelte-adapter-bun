@@ -167,7 +167,7 @@ With no prefix, `PORT` is omitted from `Bun.serve` so Bun 1.4 can read `PORT`, `
 ADDRESS_HEADER=X-Forwarded-For XFF_DEPTH=2 bun ./build/index.js
 ```
 
-The public origin for `event.url` is `ORIGIN` if set. Otherwise it is `PROTOCOL_HEADER` (default `https` — typical behind a TLS-terminating proxy) + `HOST_HEADER` or the request `Host` + optional `PORT_HEADER` (appended only when the host has no port). If `PROTOCOL_HEADER` is unset, the protocol is `https` so CSRF checks match the browser origin when Bun.serve only saw `http`.
+The public origin for `event.url` is `ORIGIN` if set. Otherwise it is the forwarded protocol from `PROTOCOL_HEADER` (when that header is present on the request) + `HOST_HEADER` or the request `Host` + optional `PORT_HEADER` (appended only when the host has no port). When `PROTOCOL_HEADER` is configured but missing on a request, or when no forwarded headers are configured at all, the protocol falls back to the incoming request URL (`http` for plain `Bun.serve`, `https` when the request arrived as HTTPS) so same-origin form actions and CSRF checks match what the browser sent.
 
 `read` from `$app/server` works. The adapter claims `supports.read` and `Server.init` streams files from `client/` (plus Kit `paths.base`) via `Bun.file`.
 
@@ -272,7 +272,7 @@ Intentional differences:
 | Assets | `assets` (not `serveAssets`). `Bun.file` plus `.br` / `.gz` negotiation, not sirv. Single and multipart `Range: bytes=` via `Bun.file.slice` | Avoid a Node static-server dependency; precompress already wrote the siblings |
 | `BODY_SIZE_LIMIT` | `Infinity` / `0` / `none` disable the cap | adapter-node’s documented off switch; gornostay rejects `Infinity` at boot |
 | `IDLE_TIMEOUT` | Must be `0`–`255` (Bun per-connection idle). Out-of-range values throw a clear error | Bun will crash on `256+`. This is not adapter-node’s process idle-shutdown |
-| Request origin | `ORIGIN`, or forwarded headers with protocol default `https`. Empty `HOST_HEADER` means use `Host`. `PORT_HEADER` is not appended when the host already has a port | Same shape as gornostay. Default `https` keeps CSRF working behind TLS-terminating proxies (`request.url` on Bun.serve is usually `http`) |
+| Request origin | `ORIGIN`, or forwarded headers; when proto is unset, fall back to the request URL protocol. Empty `HOST_HEADER` means use `Host`. `PORT_HEADER` is not appended when the host already has a port | Same shape as gornostay. Request-protocol fallback keeps local `http://` CSRF honest; set `PROTOCOL_HEADER` (or `ORIGIN`) behind TLS-terminating proxies |
 | `development` / `dynamic_origin` | Not accepted | Leftover from old gornostay. Current gornostay dropped them. Origin is always `ORIGIN` or forwarded headers; we do not minify the Bun entry |
 
 ## License

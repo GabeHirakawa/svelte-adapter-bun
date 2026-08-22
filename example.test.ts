@@ -343,7 +343,7 @@ describe("kitchen-sink example", () => {
       const fallback = await startServer({});
       try {
         const raw = await probe(fallback.base);
-        expect(raw.origin).toBe(`https://127.0.0.1:${fallback.port}`);
+        expect(raw.origin).toBe(`http://127.0.0.1:${fallback.port}`);
       } finally {
         await stop(fallback.proc);
       }

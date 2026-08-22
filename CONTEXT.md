@@ -54,7 +54,7 @@ _Avoid_: sirv, serveAssets
 _Avoid_: process idle shutdown (adapter-node’s meaning of IDLE_TIMEOUT)
 
 **Request origin**:
-The public URL origin for `event.url`. `ORIGIN` wins. Otherwise `PROTOCOL_HEADER` (default `https` — TLS-terminating proxies) + `HOST_HEADER` or `Host` + optional `PORT_HEADER` (only when the host has no port).
+The public URL origin for `event.url`. `ORIGIN` wins. Otherwise forwarded proto from `PROTOCOL_HEADER` (when present) + `HOST_HEADER` or `Host` + optional `PORT_HEADER` (only when the host has no port). When forwarded proto is unset or not configured, use the incoming request URL protocol (`http` vs `https`).
 _Avoid_: request.url as-is, default http
 
 **Kit read**:
